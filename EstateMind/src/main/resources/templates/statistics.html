@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Thống kê</title>
+    <th:block th:replace="base :: css"></th:block>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stat-card { border-radius: 12px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-4px); }
+    </style>
+</head>
+<body>
+    <div th:replace="base :: header"></div>
+
+    <section class="container mt-4 mb-5">
+        <h2 class="text-center text-info mb-4">THỐNG KÊ HỆ THỐNG</h2>
+
+        <!-- Filter năm -->
+        <div class="d-flex justify-content-end mb-3">
+            <form method="get" th:action="@{/admin/statistics}" class="d-flex align-items-center gap-2">
+                <label class="fw-bold mb-0">Năm:</label>
+                <select name="year" class="form-select form-select-sm" style="width:120px" onchange="this.form.submit()">
+                    <option value="">Tất cả</option>
+                    <option th:each="y : ${availableYears}"
+                            th:value="${y}"
+                            th:text="${y}"
+                            th:selected="${selectedYear == y}"></option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card bg-primary text-white p-3">
+                    <div class="small opacity-75">Tổng đặt phòng</div>
+                    <div class="fs-2 fw-bold" th:text="${summary.totalReservations}">0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-success text-white p-3">
+                    <div class="small opacity-75">Tổng doanh thu</div>
+                    <div class="fs-5 fw-bold" th:text="${#numbers.formatDecimal(summary.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-warning text-dark p-3">
+                    <div class="small">Chờ xử lý</div>
+                    <div class="fs-2 fw-bold" th:text="${summary.pendingReservations}">0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-info text-white p-3">
+                    <div class="small opacity-75">Đang có khách</div>
+                    <div class="fs-2 fw-bold" th:text="${summary.checkedInReservations}">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-8">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Doanh thu theo tháng</h5>
+                    <canvas id="revenueChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Đặt phòng theo trạng thái</h5>
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng chi tiết -->
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Chi tiết doanh thu theo tháng</h5>
+                    <table class="table table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tháng</th>
+                                <th>Năm</th>
+                                <th class="text-end">Doanh thu (đ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row : ${monthlyRevenue}">
+                                <td th:text="'Tháng ' + ${row[0]}"></td>
+                                <td th:text="${row[1]}"></td>
+                                <td class="text-end fw-bold text-success"
+                                    th:text="${#numbers.formatDecimal(row[2], 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(monthlyRevenue)}">
+                                <td colspan="3" class="text-center text-muted">Chưa có dữ liệu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-4 mb-3">
+                    <h5 class="fw-bold mb-3">Top 5 phòng doanh thu cao nhất</h5>
+                    <table class="table table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Phòng</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row, stat : ${topRooms}">
+                                <td th:text="${stat.index + 1}"></td>
+                                <td th:text="${row[0]}"></td>
+                                <td class="text-end fw-bold text-success"
+                                    th:text="${#numbers.formatDecimal(row[1], 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(topRooms)}">
+                                <td colspan="3" class="text-center text-muted">Chưa có dữ liệu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Top 5 dịch vụ doanh thu cao nhất</h5>
+                    <table class="table table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Dịch vụ</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row, stat : ${topServices}">
+                                <td th:text="${stat.index + 1}"></td>
+                                <td th:text="${row[0]}"></td>
+                                <td class="text-end fw-bold text-primary"
+                                    th:text="${#numbers.formatDecimal(row[1], 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(topServices)}">
+                                <td colspan="3" class="text-center text-muted">Chưa có dữ liệu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div th:replace="base :: footer"></div>
+
+    <script th:inline="javascript">
+        window.CHART_DATA = {
+            monthly: /*[[${monthlyRevenue}]]*/ [],
+            status: /*[[${byStatus}]]*/ []
+        };
+    </script>
+    <script th:src="@{/js/statistics.js}"></script>
+</body>
+</html>
