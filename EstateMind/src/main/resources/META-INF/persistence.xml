@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
-    <!-- Define Persistence Unit -->
-    <persistence-unit name="my_persistence_unit">
-        
-    </persistence-unit>
+  <!-- Define Persistence Unit -->
+  <persistence-unit name="my_persistence_unit">
+    <class>com.hvh.dto.SpatialRefSys</class>
+    <class>com.hvh.dto.GeographyColumns</class>
+    <class>com.hvh.dto.GeometryColumns</class>
+    <class>com.hvh.pojo.Users</class>
+    <class>com.hvh.pojo.PropertyMedia</class>
+    <class>com.hvh.pojo.PropertyHistories</class>
+    <class>com.hvh.pojo.Properties</class>
+    <class>com.hvh.pojo.LegalDocuments</class>
+    <class>com.hvh.pojo.PropertyComments</class>
+    <class>com.hvh.pojo.PropertyCategories</class>
+    <class>com.hvh.pojo.Property</class>
+    <class>com.hvh.pojo.LegalDocument</class>
+    <class>com.hvh.pojo.PropertyImage</class>
+    <class>com.hvh.pojo.Category</class>
+    <class>com.hvh.pojo.User</class>
+    <class>com.hvh.pojo.Comment</class>
+    <class>com.hvh.pojo.History</class>
+    <class>com.hvh.pojo.PropertyImages</class>
+  </persistence-unit>
 </persistence>

@@ -6,7 +6,7 @@ package com.hvh.configs;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.hvh.formatters.RoomTypeFormatter;
+import com.hvh.formatter.CategoryFormatter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +29,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
             "com.hvh.repository",
             "com.hvh.service",
             "com.hvh.configs",
-            "com.hvh.facade",
             "com.hvh.payment",}
 )
 @EnableWebMvc
@@ -44,7 +43,7 @@ public class WebAppContextConfigs implements WebMvcConfigurer {
 
     @Override
     public void addFormatters(FormatterRegistry registry) {
-        registry.addFormatter(new RoomTypeFormatter());
+        registry.addFormatter(new CategoryFormatter());
     }
 
     @Bean
