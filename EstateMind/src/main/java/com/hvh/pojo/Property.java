@@ -41,15 +41,11 @@ import java.util.Set;
     @NamedQuery(name = "Property.findByTitle", query = "SELECT p FROM Property p WHERE p.title = :title"),
     @NamedQuery(name = "Property.findByDescription", query = "SELECT p FROM Property p WHERE p.description = :description"),
     @NamedQuery(name = "Property.findByAddress", query = "SELECT p FROM Property p WHERE p.address = :address"),
-    @NamedQuery(name = "Property.findByCity", query = "SELECT p FROM Property p WHERE p.city = :city"),
-    @NamedQuery(name = "Property.findByDistrict", query = "SELECT p FROM Property p WHERE p.district = :district"),
-    @NamedQuery(name = "Property.findByWard", query = "SELECT p FROM Property p WHERE p.ward = :ward"),
     @NamedQuery(name = "Property.findByPrice", query = "SELECT p FROM Property p WHERE p.price = :price"),
     @NamedQuery(name = "Property.findByArea", query = "SELECT p FROM Property p WHERE p.area = :area"),
     @NamedQuery(name = "Property.findByBedrooms", query = "SELECT p FROM Property p WHERE p.bedrooms = :bedrooms"),
     @NamedQuery(name = "Property.findByBathrooms", query = "SELECT p FROM Property p WHERE p.bathrooms = :bathrooms"),
     @NamedQuery(name = "Property.findByFloors", query = "SELECT p FROM Property p WHERE p.floors = :floors"),
-    @NamedQuery(name = "Property.findByPropertyType", query = "SELECT p FROM Property p WHERE p.propertyType = :propertyType"),
     @NamedQuery(name = "Property.findByStatus", query = "SELECT p FROM Property p WHERE p.status = :status"),
     @NamedQuery(name = "Property.findByLatitude", query = "SELECT p FROM Property p WHERE p.latitude = :latitude"),
     @NamedQuery(name = "Property.findByLongitude", query = "SELECT p FROM Property p WHERE p.longitude = :longitude"),
@@ -76,15 +72,6 @@ public class Property implements Serializable {
     @Size(min = 1, max = 2147483647)
     @Column(name = "address")
     private String address;
-    @Size(max = 100)
-    @Column(name = "city")
-    private String city;
-    @Size(max = 100)
-    @Column(name = "district")
-    private String district;
-    @Size(max = 100)
-    @Column(name = "ward")
-    private String ward;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Basic(optional = false)
     @NotNull
@@ -98,9 +85,6 @@ public class Property implements Serializable {
     private Integer bathrooms;
     @Column(name = "floors")
     private Integer floors;
-    @Size(max = 50)
-    @Column(name = "property_type")
-    private String propertyType;
     @Size(max = 30)
     @Column(name = "status")
     private String status;
@@ -123,7 +107,7 @@ public class Property implements Serializable {
     private Category categoryId;
     @JoinColumn(name = "seller_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
-    private User sellerId;
+    private Users sellerId;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
     private Set<Comment> commentSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
@@ -175,30 +159,6 @@ public class Property implements Serializable {
         this.address = address;
     }
 
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getDistrict() {
-        return district;
-    }
-
-    public void setDistrict(String district) {
-        this.district = district;
-    }
-
-    public String getWard() {
-        return ward;
-    }
-
-    public void setWard(String ward) {
-        this.ward = ward;
-    }
-
     public BigDecimal getPrice() {
         return price;
     }
@@ -237,14 +197,6 @@ public class Property implements Serializable {
 
     public void setFloors(Integer floors) {
         this.floors = floors;
-    }
-
-    public String getPropertyType() {
-        return propertyType;
-    }
-
-    public void setPropertyType(String propertyType) {
-        this.propertyType = propertyType;
     }
 
     public String getStatus() {
@@ -313,11 +265,11 @@ public class Property implements Serializable {
         this.categoryId = categoryId;
     }
 
-    public User getSellerId() {
+    public Users getSellerId() {
         return sellerId;
     }
 
-    public void setSellerId(User sellerId) {
+    public void setSellerId(Users sellerId) {
         this.sellerId = sellerId;
     }
 

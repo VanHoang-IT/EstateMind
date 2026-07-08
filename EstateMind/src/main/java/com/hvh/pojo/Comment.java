@@ -59,7 +59,7 @@ public class Comment implements Serializable {
     private Property propertyId;
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
-    private User userId;
+    private Users userId;
 
     public Comment() {
     }
@@ -113,11 +113,11 @@ public class Comment implements Serializable {
         this.propertyId = propertyId;
     }
 
-    public User getUserId() {
+    public Users getUserId() {
         return userId;
     }
 
-    public void setUserId(User userId) {
+    public void setUserId(Users userId) {
         this.userId = userId;
     }
 

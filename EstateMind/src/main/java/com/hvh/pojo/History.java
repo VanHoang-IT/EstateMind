@@ -60,7 +60,7 @@ public class History implements Serializable {
     private Property propertyId;
     @JoinColumn(name = "actor_id", referencedColumnName = "id")
     @ManyToOne
-    private User actorId;
+    private Users actorId;
 
     public History() {
     }
@@ -114,11 +114,11 @@ public class History implements Serializable {
         this.propertyId = propertyId;
     }
 
-    public User getActorId() {
+    public Users getActorId() {
         return actorId;
     }
 
-    public void setActorId(User actorId) {
+    public void setActorId(Users actorId) {
         this.actorId = actorId;
     }
 

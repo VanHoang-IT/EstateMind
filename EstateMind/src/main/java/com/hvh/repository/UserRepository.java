@@ -1,6 +1,6 @@
 package com.hvh.repository;
 
-import com.hvh.pojo.User;
+import com.hvh.pojo.Users;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -12,7 +12,7 @@ import com.hvh.pojo.User;
  * @author acer
  */
 public interface UserRepository {
-    User getUserByUsername(String username);
-    User addUser(User u);
+    Users getUserByUsername(String username);
+    Users addUser(Users u);
     boolean authenticate(String username, String password);
 }

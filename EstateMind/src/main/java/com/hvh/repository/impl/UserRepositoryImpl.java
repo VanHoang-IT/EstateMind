@@ -4,7 +4,7 @@
  */
 package com.hvh.repository.impl;
 
-import com.hvh.pojo.User;
+import com.hvh.pojo.Users;
 import com.hvh.repository.UserRepository;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -13,6 +13,7 @@ import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
 /**
  *
  * @author acer
@@ -27,17 +28,17 @@ public class UserRepositoryImpl implements UserRepository {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    public User getUserByUsername(String username) {
+    public Users getUserByUsername(String username) {
         Session session = this.factory.getObject().getCurrentSession();
-        Query q = session.createNamedQuery("User.findByUsername", User.class);
+        Query q = session.createNamedQuery("Users.findByUsername", Users.class);
         q.setParameter("username", username);
 
-        return (User) q.getSingleResult();
+        return (Users) q.getSingleResult();
 
     }
 
     @Override
-    public User addUser(User u) {
+    public Users addUser(Users u) {
         Session session = this.factory.getObject().getCurrentSession();
         session.persist(u);
         
@@ -46,9 +47,8 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public boolean authenticate(String username, String password) {
-        User u = this.getUserByUsername(username);
+        Users u = this.getUserByUsername(username);
 
         return this.passwordEncoder.matches(password, u.getPassword());
     }
 }
-

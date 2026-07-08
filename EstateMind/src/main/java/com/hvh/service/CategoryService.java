@@ -4,16 +4,12 @@
  */
 package com.hvh.service;
 
-import com.hvh.pojo.Property;
+import com.hvh.pojo.Category;
 import java.util.List;
-import java.util.Map;
 /**
  *
  * @author acer
  */
-public interface PropertyService {
-    List<Property> getProperties(Map<String, String> params);
-    void addOrUpdateProperty(Property property);
-    Property getPropertyById(int id);
-    void deleteProperty(int id);
+public interface CategoryService {
+    List<Category> getCates();
 }

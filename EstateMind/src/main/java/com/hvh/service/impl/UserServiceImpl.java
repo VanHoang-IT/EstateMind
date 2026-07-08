@@ -6,7 +6,7 @@ package com.hvh.service.impl;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.hvh.pojo.User;
+import com.hvh.pojo.Users;
 import com.hvh.repository.UserRepository;
 import com.hvh.service.UserService;
 import java.io.IOException;
@@ -40,13 +40,13 @@ public class UserServiceImpl implements UserService {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    public User getUserByUsername(String username) {
+    public Users getUserByUsername(String username) {
         return this.userRepo.getUserByUsername(username);
     }
 
     @Override
-    public User addUser(Map<String, String> params, MultipartFile avatar) {
-        User u = new User();
+    public Users addUser(Map<String, String> params, MultipartFile avatar) {
+        Users u = new Users();
         u.setFirstName(params.get("firstName"));
         u.setLastName(params.get("lastName"));
         u.setPhone(params.get("phone"));
@@ -70,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = this.userRepo.getUserByUsername(username);
+        Users user = this.userRepo.getUserByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("Không tồn tại!");
         }
