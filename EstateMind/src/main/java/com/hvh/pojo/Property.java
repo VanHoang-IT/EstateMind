@@ -43,9 +43,6 @@ import java.util.Set;
     @NamedQuery(name = "Property.findByAddress", query = "SELECT p FROM Property p WHERE p.address = :address"),
     @NamedQuery(name = "Property.findByPrice", query = "SELECT p FROM Property p WHERE p.price = :price"),
     @NamedQuery(name = "Property.findByArea", query = "SELECT p FROM Property p WHERE p.area = :area"),
-    @NamedQuery(name = "Property.findByBedrooms", query = "SELECT p FROM Property p WHERE p.bedrooms = :bedrooms"),
-    @NamedQuery(name = "Property.findByBathrooms", query = "SELECT p FROM Property p WHERE p.bathrooms = :bathrooms"),
-    @NamedQuery(name = "Property.findByFloors", query = "SELECT p FROM Property p WHERE p.floors = :floors"),
     @NamedQuery(name = "Property.findByStatus", query = "SELECT p FROM Property p WHERE p.status = :status"),
     @NamedQuery(name = "Property.findByLatitude", query = "SELECT p FROM Property p WHERE p.latitude = :latitude"),
     @NamedQuery(name = "Property.findByLongitude", query = "SELECT p FROM Property p WHERE p.longitude = :longitude"),
@@ -79,12 +76,6 @@ public class Property implements Serializable {
     private BigDecimal price;
     @Column(name = "area")
     private BigDecimal area;
-    @Column(name = "bedrooms")
-    private Integer bedrooms;
-    @Column(name = "bathrooms")
-    private Integer bathrooms;
-    @Column(name = "floors")
-    private Integer floors;
     @Size(max = 30)
     @Column(name = "status")
     private String status;
@@ -98,6 +89,8 @@ public class Property implements Serializable {
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
+    private Set<Favorites> favoritesSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
     private Set<LegalDocument> legalDocumentSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
@@ -175,30 +168,6 @@ public class Property implements Serializable {
         this.area = area;
     }
 
-    public Integer getBedrooms() {
-        return bedrooms;
-    }
-
-    public void setBedrooms(Integer bedrooms) {
-        this.bedrooms = bedrooms;
-    }
-
-    public Integer getBathrooms() {
-        return bathrooms;
-    }
-
-    public void setBathrooms(Integer bathrooms) {
-        this.bathrooms = bathrooms;
-    }
-
-    public Integer getFloors() {
-        return floors;
-    }
-
-    public void setFloors(Integer floors) {
-        this.floors = floors;
-    }
-
     public String getStatus() {
         return status;
     }
@@ -237,6 +206,15 @@ public class Property implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @XmlTransient
+    public Set<Favorites> getFavoritesSet() {
+        return favoritesSet;
+    }
+
+    public void setFavoritesSet(Set<Favorites> favoritesSet) {
+        this.favoritesSet = favoritesSet;
     }
 
     @XmlTransient

@@ -91,12 +91,18 @@ public class Users implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "avatar")
     private String avatar;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
+    private Set<Favorites> favoritesSet;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
+    private Set<UploadedDocuments> uploadedDocumentsSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerId")
     private Set<Property> propertySet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
     private Set<Comment> commentSet;
     @OneToMany(mappedBy = "actorId")
     private Set<History> historySet;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
+    private Set<ChatHistory> chatHistorySet;
 
     public Users() {
     }
@@ -197,6 +203,24 @@ public class Users implements Serializable {
     }
 
     @XmlTransient
+    public Set<Favorites> getFavoritesSet() {
+        return favoritesSet;
+    }
+
+    public void setFavoritesSet(Set<Favorites> favoritesSet) {
+        this.favoritesSet = favoritesSet;
+    }
+
+    @XmlTransient
+    public Set<UploadedDocuments> getUploadedDocumentsSet() {
+        return uploadedDocumentsSet;
+    }
+
+    public void setUploadedDocumentsSet(Set<UploadedDocuments> uploadedDocumentsSet) {
+        this.uploadedDocumentsSet = uploadedDocumentsSet;
+    }
+
+    @XmlTransient
     public Set<Property> getPropertySet() {
         return propertySet;
     }
@@ -221,6 +245,15 @@ public class Users implements Serializable {
 
     public void setHistorySet(Set<History> historySet) {
         this.historySet = historySet;
+    }
+
+    @XmlTransient
+    public Set<ChatHistory> getChatHistorySet() {
+        return chatHistorySet;
+    }
+
+    public void setChatHistorySet(Set<ChatHistory> chatHistorySet) {
+        this.chatHistorySet = chatHistorySet;
     }
 
     @Override

@@ -20,5 +20,8 @@
     <class>com.hvh.pojo.Comment</class>
     <class>com.hvh.pojo.History</class>
     <class>com.hvh.pojo.PropertyImages</class>
+    <class>com.hvh.pojo.Favorites</class>
+    <class>com.hvh.pojo.UploadedDocuments</class>
+    <class>com.hvh.pojo.ChatHistory</class>
   </persistence-unit>
 </persistence>
