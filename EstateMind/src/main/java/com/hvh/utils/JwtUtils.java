@@ -20,6 +20,7 @@ import com.nimbusds.jwt.SignedJWT;
 import java.util.Date;
 
 public class JwtUtils {
+    // SECRET nên được lưu bằng biến môi trường,
     private static final String SECRET = "12345678901234567890123456789012"; // 32 ký tự (AES key)
     private static final long EXPIRATION_MS = 86400000; // 1 ngày
 

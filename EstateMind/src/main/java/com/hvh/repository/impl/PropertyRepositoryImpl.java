@@ -5,6 +5,7 @@
 package com.hvh.repository.impl;
 
 import com.hvh.pojo.Property;
+import com.hvh.pojo.PropertyImages;
 import com.hvh.repository.PropertyRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -86,7 +87,7 @@ public class PropertyRepositoryImpl implements PropertyRepository {
             q.where(predicates.toArray(new Predicate[0]));
         }
 
-        q.orderBy(b.desc(root.get("id")));
+        q.orderBy(b.asc(root.get("id")));
 
         Query<Property> query = session.createQuery(q);
 
@@ -133,5 +134,11 @@ public class PropertyRepositoryImpl implements PropertyRepository {
 
         if (property != null)
             session.remove(property);
+    }
+    
+     @Override
+    public void addPropertyImage(PropertyImages image) {
+        Session session = this.factory.getObject().getCurrentSession();
+        session.persist(image);
     }
 }

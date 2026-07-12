@@ -47,15 +47,13 @@ import java.util.Set;
     @NamedQuery(name = "Property.findByLatitude", query = "SELECT p FROM Property p WHERE p.latitude = :latitude"),
     @NamedQuery(name = "Property.findByLongitude", query = "SELECT p FROM Property p WHERE p.longitude = :longitude"),
     @NamedQuery(name = "Property.findByCreatedAt", query = "SELECT p FROM Property p WHERE p.createdAt = :createdAt"),
-    @NamedQuery(name = "Property.findByUpdatedAt", query = "SELECT p FROM Property p WHERE p.updatedAt = :updatedAt")})
+    @NamedQuery(name = "Property.findByUpdatedAt", query = "SELECT p FROM Property p WHERE p.updatedAt = :updatedAt"),
+    @NamedQuery(name = "Property.findByDistrict", query = "SELECT p FROM Property p WHERE p.district = :district"),
+    @NamedQuery(name = "Property.findByUrl", query = "SELECT p FROM Property p WHERE p.url = :url"),
+    @NamedQuery(name = "Property.findByBedrooms", query = "SELECT p FROM Property p WHERE p.bedrooms = :bedrooms"),
+    @NamedQuery(name = "Property.findByCrawlDate", query = "SELECT p FROM Property p WHERE p.crawlDate = :crawlDate")})
 public class Property implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Basic(optional = false)
-    @Column(name = "id")
-    private Integer id;
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 255)
@@ -74,11 +72,24 @@ public class Property implements Serializable {
     @NotNull
     @Column(name = "price")
     private BigDecimal price;
-    @Column(name = "area")
-    private BigDecimal area;
     @Size(max = 30)
     @Column(name = "status")
     private String status;
+    @Size(max = 100)
+    @Column(name = "district")
+    private String district;
+    @Size(max = 2147483647)
+    @Column(name = "url")
+    private String url;
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "id")
+    private Integer id;
+    @Column(name = "area")
+    private BigDecimal area;
     @Column(name = "latitude")
     private BigDecimal latitude;
     @Column(name = "longitude")
@@ -89,20 +100,25 @@ public class Property implements Serializable {
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+    @Column(name = "bedrooms")
+    private Integer bedrooms;
+    @Column(name = "crawl_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date crawlDate;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
     private Set<Favorites> favoritesSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
     private Set<LegalDocument> legalDocumentSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
     private Set<PropertyImages> propertyImagesSet;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
+    private Set<Review> reviewSet;
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @ManyToOne
     private Category categoryId;
     @JoinColumn(name = "seller_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Users sellerId;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
-    private Set<Comment> commentSet;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId")
     private Set<History> historySet;
 
@@ -128,37 +144,6 @@ public class Property implements Serializable {
         this.id = id;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
 
     public BigDecimal getArea() {
         return area;
@@ -168,13 +153,6 @@ public class Property implements Serializable {
         this.area = area;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 
     public BigDecimal getLatitude() {
         return latitude;
@@ -208,6 +186,23 @@ public class Property implements Serializable {
         this.updatedAt = updatedAt;
     }
 
+
+    public Integer getBedrooms() {
+        return bedrooms;
+    }
+
+    public void setBedrooms(Integer bedrooms) {
+        this.bedrooms = bedrooms;
+    }
+
+    public Date getCrawlDate() {
+        return crawlDate;
+    }
+
+    public void setCrawlDate(Date crawlDate) {
+        this.crawlDate = crawlDate;
+    }
+
     @XmlTransient
     public Set<Favorites> getFavoritesSet() {
         return favoritesSet;
@@ -235,6 +230,15 @@ public class Property implements Serializable {
         this.propertyImagesSet = propertyImagesSet;
     }
 
+    @XmlTransient
+    public Set<Review> getReviewSet() {
+        return reviewSet;
+    }
+
+    public void setReviewSet(Set<Review> reviewSet) {
+        this.reviewSet = reviewSet;
+    }
+
     public Category getCategoryId() {
         return categoryId;
     }
@@ -249,15 +253,6 @@ public class Property implements Serializable {
 
     public void setSellerId(Users sellerId) {
         this.sellerId = sellerId;
-    }
-
-    @XmlTransient
-    public Set<Comment> getCommentSet() {
-        return commentSet;
-    }
-
-    public void setCommentSet(Set<Comment> commentSet) {
-        this.commentSet = commentSet;
     }
 
     @XmlTransient
@@ -292,6 +287,62 @@ public class Property implements Serializable {
     @Override
     public String toString() {
         return "com.hvh.pojo.Property[ id=" + id + " ]";
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getDistrict() {
+        return district;
+    }
+
+    public void setDistrict(String district) {
+        this.district = district;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
     
 }

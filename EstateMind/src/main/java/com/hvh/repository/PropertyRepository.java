@@ -5,6 +5,7 @@
 package com.hvh.repository;
 
 import com.hvh.pojo.Property;
+import com.hvh.pojo.PropertyImages;
 import java.util.List;
 import java.util.Map;
 /**
@@ -17,4 +18,5 @@ public interface PropertyRepository {
    void addOrUpdateProperty(Property property);
    Property getPropertyById(int id);
    void deleteProperty(int id);
+   void addPropertyImage(PropertyImages image);
 }

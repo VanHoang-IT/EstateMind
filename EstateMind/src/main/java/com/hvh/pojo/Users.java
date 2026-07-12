@@ -5,7 +5,6 @@
 package com.hvh.pojo;
 
 import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,14 +12,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
-import java.util.Set;
 
 /**
  *
@@ -91,18 +87,6 @@ public class Users implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "avatar")
     private String avatar;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
-    private Set<Favorites> favoritesSet;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
-    private Set<UploadedDocuments> uploadedDocumentsSet;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerId")
-    private Set<Property> propertySet;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
-    private Set<Comment> commentSet;
-    @OneToMany(mappedBy = "actorId")
-    private Set<History> historySet;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
-    private Set<ChatHistory> chatHistorySet;
 
     public Users() {
     }
@@ -200,60 +184,6 @@ public class Users implements Serializable {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
-    }
-
-    @XmlTransient
-    public Set<Favorites> getFavoritesSet() {
-        return favoritesSet;
-    }
-
-    public void setFavoritesSet(Set<Favorites> favoritesSet) {
-        this.favoritesSet = favoritesSet;
-    }
-
-    @XmlTransient
-    public Set<UploadedDocuments> getUploadedDocumentsSet() {
-        return uploadedDocumentsSet;
-    }
-
-    public void setUploadedDocumentsSet(Set<UploadedDocuments> uploadedDocumentsSet) {
-        this.uploadedDocumentsSet = uploadedDocumentsSet;
-    }
-
-    @XmlTransient
-    public Set<Property> getPropertySet() {
-        return propertySet;
-    }
-
-    public void setPropertySet(Set<Property> propertySet) {
-        this.propertySet = propertySet;
-    }
-
-    @XmlTransient
-    public Set<Comment> getCommentSet() {
-        return commentSet;
-    }
-
-    public void setCommentSet(Set<Comment> commentSet) {
-        this.commentSet = commentSet;
-    }
-
-    @XmlTransient
-    public Set<History> getHistorySet() {
-        return historySet;
-    }
-
-    public void setHistorySet(Set<History> historySet) {
-        this.historySet = historySet;
-    }
-
-    @XmlTransient
-    public Set<ChatHistory> getChatHistorySet() {
-        return chatHistorySet;
-    }
-
-    public void setChatHistorySet(Set<ChatHistory> chatHistorySet) {
-        this.chatHistorySet = chatHistorySet;
     }
 
     @Override

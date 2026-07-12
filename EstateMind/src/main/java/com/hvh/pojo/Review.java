@@ -28,15 +28,16 @@ import java.util.Date;
  * @author acer
  */
 @Entity
-@Table(name = "comment")
+@Table(name = "review")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "Comment.findAll", query = "SELECT c FROM Comment c"),
-    @NamedQuery(name = "Comment.findById", query = "SELECT c FROM Comment c WHERE c.id = :id"),
-    @NamedQuery(name = "Comment.findByContent", query = "SELECT c FROM Comment c WHERE c.content = :content"),
-    @NamedQuery(name = "Comment.findByRating", query = "SELECT c FROM Comment c WHERE c.rating = :rating"),
-    @NamedQuery(name = "Comment.findByCreatedAt", query = "SELECT c FROM Comment c WHERE c.createdAt = :createdAt")})
-public class Comment implements Serializable {
+    @NamedQuery(name = "Review.findAll", query = "SELECT r FROM Review r"),
+    @NamedQuery(name = "Review.findById", query = "SELECT r FROM Review r WHERE r.id = :id"),
+    @NamedQuery(name = "Review.findByContent", query = "SELECT r FROM Review r WHERE r.content = :content"),
+    @NamedQuery(name = "Review.findByRating", query = "SELECT r FROM Review r WHERE r.rating = :rating"),
+    @NamedQuery(name = "Review.findByCreatedAt", query = "SELECT r FROM Review r WHERE r.createdAt = :createdAt"),
+    @NamedQuery(name = "Review.findByVisible", query = "SELECT r FROM Review r WHERE r.visible = :visible")})
+public class Review implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
@@ -54,6 +55,8 @@ public class Comment implements Serializable {
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+    @Column(name = "visible")
+    private Boolean visible;
     @JoinColumn(name = "property_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Property propertyId;
@@ -61,14 +64,14 @@ public class Comment implements Serializable {
     @ManyToOne(optional = false)
     private Users userId;
 
-    public Comment() {
+    public Review() {
     }
 
-    public Comment(Integer id) {
+    public Review(Integer id) {
         this.id = id;
     }
 
-    public Comment(Integer id, String content) {
+    public Review(Integer id, String content) {
         this.id = id;
         this.content = content;
     }
@@ -105,6 +108,14 @@ public class Comment implements Serializable {
         this.createdAt = createdAt;
     }
 
+    public Boolean getVisible() {
+        return visible;
+    }
+
+    public void setVisible(Boolean visible) {
+        this.visible = visible;
+    }
+
     public Property getPropertyId() {
         return propertyId;
     }
@@ -131,10 +142,10 @@ public class Comment implements Serializable {
     @Override
     public boolean equals(Object object) {
         // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof Comment)) {
+        if (!(object instanceof Review)) {
             return false;
         }
-        Comment other = (Comment) object;
+        Review other = (Review) object;
         if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
@@ -143,7 +154,7 @@ public class Comment implements Serializable {
 
     @Override
     public String toString() {
-        return "com.hvh.pojo.Comment[ id=" + id + " ]";
+        return "com.hvh.pojo.Review[ id=" + id + " ]";
     }
     
 }

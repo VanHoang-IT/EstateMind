@@ -23,5 +23,9 @@
     <class>com.hvh.pojo.Favorites</class>
     <class>com.hvh.pojo.UploadedDocuments</class>
     <class>com.hvh.pojo.ChatHistory</class>
+    <class>com.hvh.pojo.Review</class>
+    <class>com.hvh.pojo.CustomerProfile</class>
+    <class>com.hvh.pojo.Company</class>
+    <class>com.hvh.pojo.SellerProfile</class>
   </persistence-unit>
 </persistence>

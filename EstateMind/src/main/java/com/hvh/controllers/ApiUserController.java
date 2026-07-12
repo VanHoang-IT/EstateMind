@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+
 /**
  *
  * @author acer
@@ -31,19 +32,20 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api")
 @CrossOrigin
 public class ApiUserController {
+
     @Autowired
     private UserService userService;
-    
-    @PostMapping(path = "/users", 
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE, 
+
+    @PostMapping(path = "/users",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Users> create(@RequestParam Map<String, String> params, 
+    public ResponseEntity<Users> create(@RequestParam Map<String, String> params,
             @RequestParam(value = "avatar") MultipartFile avatar) {
         Users u = this.userService.addUser(params, avatar);
-        
+
         return new ResponseEntity<>(u, HttpStatus.CREATED);
     }
-    
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Users u) {
 
@@ -58,9 +60,17 @@ public class ApiUserController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai thông tin đăng nhập");
     }
 
-    @RequestMapping("/secure/profile")
+    @RequestMapping(
+            value = "/secure/profile",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     @ResponseBody
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     public ResponseEntity<Users> getProfile(Principal principal) {
-        return new ResponseEntity<>(this.userService.getUserByUsername(principal.getName()), HttpStatus.OK);
+
+        return new ResponseEntity<>(
+                this.userService.getUserByUsername(
+                        principal.getName()),
+                HttpStatus.OK);
     }
 }
