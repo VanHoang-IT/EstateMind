@@ -5,13 +5,12 @@
 package com.hvh.pojo;
 
 import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -28,14 +27,14 @@ import java.util.Set;
  * @author acer
  */
 @Entity
-@Table(name = "category")
+@Table(name = "property_type")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "Category.findAll", query = "SELECT c FROM Category c"),
-    @NamedQuery(name = "Category.findById", query = "SELECT c FROM Category c WHERE c.id = :id"),
-    @NamedQuery(name = "Category.findByName", query = "SELECT c FROM Category c WHERE c.name = :name"),
-    @NamedQuery(name = "Category.findByDescription", query = "SELECT c FROM Category c WHERE c.description = :description")})
-public class Category implements Serializable {
+    @NamedQuery(name = "PropertyType.findAll", query = "SELECT p FROM PropertyType p"),
+    @NamedQuery(name = "PropertyType.findById", query = "SELECT p FROM PropertyType p WHERE p.id = :id"),
+    @NamedQuery(name = "PropertyType.findByName", query = "SELECT p FROM PropertyType p WHERE p.name = :name"),
+    @NamedQuery(name = "PropertyType.findByDescription", query = "SELECT p FROM PropertyType p WHERE p.description = :description")})
+public class PropertyType implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
@@ -45,26 +44,23 @@ public class Category implements Serializable {
     private Integer id;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 100)
+    @Size(min = 1, max = 50)
     @Column(name = "name")
     private String name;
     @Size(max = 2147483647)
     @Column(name = "description")
     private String description;
-    @OneToMany(mappedBy = "categoryId")
-    private Set<Property> propertySet;
-    @JoinColumn(name = "property_type_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
-    private PropertyType propertyTypeId;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyTypeId")
+    private Set<Category> categorySet;
 
-    public Category() {
+    public PropertyType() {
     }
 
-    public Category(Integer id) {
+    public PropertyType(Integer id) {
         this.id = id;
     }
 
-    public Category(Integer id, String name) {
+    public PropertyType(Integer id, String name) {
         this.id = id;
         this.name = name;
     }
@@ -94,20 +90,12 @@ public class Category implements Serializable {
     }
 
     @XmlTransient
-    public Set<Property> getPropertySet() {
-        return propertySet;
+    public Set<Category> getCategorySet() {
+        return categorySet;
     }
 
-    public void setPropertySet(Set<Property> propertySet) {
-        this.propertySet = propertySet;
-    }
-
-    public PropertyType getPropertyTypeId() {
-        return propertyTypeId;
-    }
-
-    public void setPropertyTypeId(PropertyType propertyTypeId) {
-        this.propertyTypeId = propertyTypeId;
+    public void setCategorySet(Set<Category> categorySet) {
+        this.categorySet = categorySet;
     }
 
     @Override
@@ -120,10 +108,10 @@ public class Category implements Serializable {
     @Override
     public boolean equals(Object object) {
         // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof Category)) {
+        if (!(object instanceof PropertyType)) {
             return false;
         }
-        Category other = (Category) object;
+        PropertyType other = (PropertyType) object;
         if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
@@ -132,7 +120,7 @@ public class Category implements Serializable {
 
     @Override
     public String toString() {
-        return "com.hvh.pojo.Category[ id=" + id + " ]";
+        return "com.hvh.pojo.PropertyType[ id=" + id + " ]";
     }
     
 }

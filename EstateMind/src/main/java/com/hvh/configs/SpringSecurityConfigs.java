@@ -43,8 +43,6 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 )
 public class SpringSecurityConfigs {
 
-//    @Autowired
-//    private UserDetailsService userDetailsService;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {

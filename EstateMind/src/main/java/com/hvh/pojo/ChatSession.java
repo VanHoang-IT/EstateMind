@@ -11,33 +11,35 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Set;
 
 /**
  *
  * @author acer
  */
 @Entity
-@Table(name = "chat_history")
+@Table(name = "chat_session")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "ChatHistory.findAll", query = "SELECT c FROM ChatHistory c"),
-    @NamedQuery(name = "ChatHistory.findById", query = "SELECT c FROM ChatHistory c WHERE c.id = :id"),
-    @NamedQuery(name = "ChatHistory.findByQuestion", query = "SELECT c FROM ChatHistory c WHERE c.question = :question"),
-    @NamedQuery(name = "ChatHistory.findByAnswer", query = "SELECT c FROM ChatHistory c WHERE c.answer = :answer"),
-    @NamedQuery(name = "ChatHistory.findByCreatedDate", query = "SELECT c FROM ChatHistory c WHERE c.createdDate = :createdDate")})
-public class ChatHistory implements Serializable {
+    @NamedQuery(name = "ChatSession.findAll", query = "SELECT c FROM ChatSession c"),
+    @NamedQuery(name = "ChatSession.findById", query = "SELECT c FROM ChatSession c WHERE c.id = :id"),
+    @NamedQuery(name = "ChatSession.findByTitle", query = "SELECT c FROM ChatSession c WHERE c.title = :title"),
+    @NamedQuery(name = "ChatSession.findByCreatedAt", query = "SELECT c FROM ChatSession c WHERE c.createdAt = :createdAt"),
+    @NamedQuery(name = "ChatSession.findByUpdatedAt", query = "SELECT c FROM ChatSession c WHERE c.updatedAt = :updatedAt")})
+public class ChatSession implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
@@ -45,40 +47,36 @@ public class ChatHistory implements Serializable {
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+    @Size(max = 255)
+    @Column(name = "title")
+    private String title;
     @Basic(optional = false)
     @NotNull
-    @Size(min = 1, max = 2147483647)
-    @Column(name = "question")
-    private String question;
-    @Basic(optional = false)
-    @NotNull
-    @Size(min = 1, max = 2147483647)
-    @Column(name = "answer")
-    private String answer;
-    @Column(name = "created_date")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
-    @Lob
-    @Column(name = "source_refs")
-    private Object sourceRefs;
-    @JoinColumn(name = "session_id", referencedColumnName = "id")
-    @ManyToOne
-    private ChatSession sessionId;
+    private Date createdAt;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
+    @OneToMany(mappedBy = "sessionId")
+    private Set<ChatHistory> chatHistorySet;
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
+    @ManyToOne
     private Users userId;
 
-    public ChatHistory() {
+    public ChatSession() {
     }
 
-    public ChatHistory(Integer id) {
+    public ChatSession(Integer id) {
         this.id = id;
     }
 
-    public ChatHistory(Integer id, String question, String answer) {
+    public ChatSession(Integer id, Date createdAt, Date updatedAt) {
         this.id = id;
-        this.question = question;
-        this.answer = answer;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public Integer getId() {
@@ -89,44 +87,37 @@ public class ChatHistory implements Serializable {
         this.id = id;
     }
 
-    public String getQuestion() {
-        return question;
+    public String getTitle() {
+        return title;
     }
 
-    public void setQuestion(String question) {
-        this.question = question;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getAnswer() {
-        return answer;
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setAnswer(String answer) {
-        this.answer = answer;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public Date getCreatedDate() {
-        return createdDate;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setCreatedDate(Date createdDate) {
-        this.createdDate = createdDate;
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
-    public Object getSourceRefs() {
-        return sourceRefs;
+    @XmlTransient
+    public Set<ChatHistory> getChatHistorySet() {
+        return chatHistorySet;
     }
 
-    public void setSourceRefs(Object sourceRefs) {
-        this.sourceRefs = sourceRefs;
-    }
-
-    public ChatSession getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(ChatSession sessionId) {
-        this.sessionId = sessionId;
+    public void setChatHistorySet(Set<ChatHistory> chatHistorySet) {
+        this.chatHistorySet = chatHistorySet;
     }
 
     public Users getUserId() {
@@ -147,10 +138,10 @@ public class ChatHistory implements Serializable {
     @Override
     public boolean equals(Object object) {
         // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof ChatHistory)) {
+        if (!(object instanceof ChatSession)) {
             return false;
         }
-        ChatHistory other = (ChatHistory) object;
+        ChatSession other = (ChatSession) object;
         if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
@@ -159,7 +150,7 @@ public class ChatHistory implements Serializable {
 
     @Override
     public String toString() {
-        return "com.hvh.pojo.ChatHistory[ id=" + id + " ]";
+        return "com.hvh.pojo.ChatSession[ id=" + id + " ]";
     }
     
 }
