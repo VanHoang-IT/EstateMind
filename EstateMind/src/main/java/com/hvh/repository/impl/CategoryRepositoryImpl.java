@@ -34,4 +34,10 @@ public class CategoryRepositoryImpl implements CategoryRepository {
 
         return query.getResultList();
     }
+    
+    @Override
+    public Category getCategoryById(int id) {
+        Session session = this.factory.getObject().getCurrentSession();
+        return session.get(Category.class, id);
+    }
 }

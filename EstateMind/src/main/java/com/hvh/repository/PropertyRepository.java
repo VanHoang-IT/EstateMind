@@ -13,10 +13,10 @@ import java.util.Map;
  * @author acer
  */
 public interface PropertyRepository {
-
    List<Property> getProperties(Map<String, String> params);
    void addOrUpdateProperty(Property property);
    Property getPropertyById(int id);
    void deleteProperty(int id);
    void addPropertyImage(PropertyImages image);
+   long countProperties(Map<String, String> params);
 }

@@ -51,7 +51,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
             if (propertyId != null && !propertyId.isEmpty()) {
                 predicates.add(
                         cb.equal(root.get("propertyId").get("id"),
-                                Long.parseLong(propertyId))
+                                Integer.parseInt(propertyId))
                 );
             }
 
@@ -66,6 +66,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         }
 
         cq.where(predicates.toArray(Predicate[]::new));
+        cq.orderBy(cb.desc(root.get("createdAt")));
 
         return session.createQuery(cq).getResultList();
     }
@@ -81,13 +82,13 @@ public class ReviewRepositoryImpl implements ReviewRepository {
     }
 
     @Override
-    public Review getReviewById(Long id) {
+    public Review getReviewById(Integer id) {
         Session session = sessionFactory.getCurrentSession();
         return session.get(Review.class, id);
     }
 
     @Override
-    public void deleteReview(Long id) {
+    public void deleteReview(Integer id) {
         Session session = sessionFactory.getCurrentSession();
 
         Review review = session.get(Review.class, id);
@@ -97,7 +98,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
     }
 
     @Override
-    public List<Review> getReviewsByPropertyId(Long propertyId) {
+    public List<Review> getReviewsByPropertyId(Integer propertyId) {
 
         Session session = sessionFactory.getCurrentSession();
 
@@ -107,5 +108,4 @@ public class ReviewRepositoryImpl implements ReviewRepository {
                 .setParameter("id", propertyId)
                 .getResultList();
     }
-
 }

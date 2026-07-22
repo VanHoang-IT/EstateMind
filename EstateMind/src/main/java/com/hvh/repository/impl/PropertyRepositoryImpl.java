@@ -35,77 +35,97 @@ public class PropertyRepositoryImpl implements PropertyRepository {
     @Autowired
     private LocalSessionFactoryBean factory;
 
+    private List<Predicate> buildPredicates(CriteriaBuilder b, Root<Property> root, Map<String, String> params) {
+        List<Predicate> predicates = new ArrayList<>();
+        if (params == null) {
+            return predicates;
+        }
+
+        String search = params.get("search");
+        if (search != null && !search.isBlank()) {
+            predicates.add(b.like(b.lower(root.get("title")), String.format("%%%s%%", search.toLowerCase())));
+        }
+
+        String district = params.get("district");
+        if (district != null && !district.isBlank()) {
+            predicates.add(b.equal(root.get("district"), district));
+        }
+
+        String minPrice = params.get("minPrice");
+        if (minPrice != null && !minPrice.isBlank()) {
+            predicates.add(b.greaterThanOrEqualTo(root.get("price"), new BigDecimal(minPrice)));
+        }
+
+        String maxPrice = params.get("maxPrice");
+        if (maxPrice != null && !maxPrice.isBlank()) {
+            predicates.add(b.lessThanOrEqualTo(root.get("price"), new BigDecimal(maxPrice)));
+        }
+
+        String categoryId = params.get("categoryId");
+        if (categoryId != null && !categoryId.isBlank()) {
+            predicates.add(b.equal(root.get("categoryId").get("id"), Integer.parseInt(categoryId)));
+        }
+
+        String bedrooms = params.get("bedrooms");
+        if (bedrooms != null && !bedrooms.isBlank()) {
+            predicates.add(b.equal(root.get("bedrooms"), Integer.parseInt(bedrooms)));
+        }
+
+        return predicates;
+    }
+
+    private int resolvePageSize(Map<String, String> params) {
+        int defaultSize = env.getProperty("properties.page_size", Integer.class, 10);
+        if (params == null) {
+            return defaultSize;
+        }
+        String size = params.get("size");
+        if (size == null || size.isBlank()) {
+            return defaultSize;
+        }
+        return Math.min(Integer.parseInt(size), 50); // hard cap so nobody asks for size=100000
+    }
+
+    private int resolvePage(Map<String, String> params) {
+        if (params == null) {
+            return 1;
+        }
+        int page = Integer.parseInt(params.getOrDefault("page", "1"));
+        return Math.max(page, 1);
+    }
+
     @Override
     public List<Property> getProperties(Map<String, String> params) {
-
         Session session = this.factory.getObject().getCurrentSession();
 
         CriteriaBuilder b = session.getCriteriaBuilder();
         CriteriaQuery<Property> q = b.createQuery(Property.class);
         Root<Property> root = q.from(Property.class);
 
-        q.select(root);
-
-        if (params != null) {
-
-            List<Predicate> predicates = new ArrayList<>();
-
-            String kw = params.get("kw");
-            if (kw != null && !kw.isEmpty()) {
-                predicates.add(
-                        b.like(root.get("title"),
-                                String.format("%%%s%%", kw))
-                );
-            }
-
-            String fromPrice = params.get("fromPrice");
-            if (fromPrice != null && !fromPrice.isEmpty()) {
-                predicates.add(
-                        b.greaterThanOrEqualTo(
-                                root.get("price"),
-                                new BigDecimal(fromPrice))
-                );
-            }
-
-            String toPrice = params.get("toPrice");
-            if (toPrice != null && !toPrice.isEmpty()) {
-                predicates.add(
-                        b.lessThanOrEqualTo(
-                                root.get("price"),
-                                new BigDecimal(toPrice))
-                );
-            }
-
-            String cateId = params.get("cateId");
-            if (cateId != null && !cateId.isEmpty()) {
-                predicates.add(
-                        b.equal(root.get("categoryId").get("id"),
-                                Integer.parseInt(cateId))
-                );
-            }
-
-            q.where(predicates.toArray(new Predicate[0]));
-        }
-
-        q.orderBy(b.asc(root.get("id")));
+        q.select(root).where(buildPredicates(b, root, params).toArray(new Predicate[0]));
+        q.orderBy(b.desc(root.get("id")));
 
         Query<Property> query = session.createQuery(q);
 
-        if (params != null) {
-
-            int pageSize = env.getProperty(
-                    "properties.page_size",
-                    Integer.class,
-                    10);
-
-            int page = Integer.parseInt(
-                    params.getOrDefault("page", "1"));
-
-            query.setFirstResult((page - 1) * pageSize);
-            query.setMaxResults(pageSize);
-        }
+        int pageSize = resolvePageSize(params);
+        int page = resolvePage(params);
+        query.setFirstResult((page - 1) * pageSize);
+        query.setMaxResults(pageSize);
 
         return query.getResultList();
+    }
+
+    @Override
+    public long countProperties(Map<String, String> params) {
+        Session session = this.factory.getObject().getCurrentSession();
+
+        CriteriaBuilder b = session.getCriteriaBuilder();
+        CriteriaQuery<Long> q = b.createQuery(Long.class);
+        Root<Property> root = q.from(Property.class);
+
+        q.select(b.count(root)).where(buildPredicates(b, root, params).toArray(new Predicate[0]));
+
+        return session.createQuery(q).getSingleResult();
     }
 
     @Override
@@ -116,27 +136,27 @@ public class PropertyRepositoryImpl implements PropertyRepository {
 
     @Override
     public void addOrUpdateProperty(Property property) {
-
         Session session = this.factory.getObject().getCurrentSession();
 
-        if (property.getId() != null)
+        if (property.getId() != null) {
             session.merge(property);
-        else
+        } else {
             session.persist(property);
+        }
     }
 
     @Override
     public void deleteProperty(int id) {
-
         Session session = this.factory.getObject().getCurrentSession();
 
         Property property = this.getPropertyById(id);
 
-        if (property != null)
+        if (property != null) {
             session.remove(property);
+        }
     }
-    
-     @Override
+
+    @Override
     public void addPropertyImage(PropertyImages image) {
         Session session = this.factory.getObject().getCurrentSession();
         session.persist(image);

@@ -25,16 +25,17 @@ public class HomeController {
     private CategoryService cateService;
     @Autowired
     private PropertyService prodService;
-    
+
     @ModelAttribute
     public void commonResponses(Model model) {
         model.addAttribute("categories", this.cateService.getCates());
     }
-    
+
     @RequestMapping("/")
     public String index(Model model, @RequestParam Map<String, String> params) {
-        
-        model.addAttribute("properties", this.prodService.getProperties(params));
+        model.addAttribute("properties", this.prodService.getProperties(params).getItems());
+
         return "index";
     }
 }
+

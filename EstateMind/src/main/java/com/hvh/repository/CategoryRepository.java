@@ -12,4 +12,5 @@ import java.util.List;
  */
 public interface CategoryRepository {
     List<Category> getCates();
+    Category getCategoryById(int id);
 }

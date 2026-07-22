@@ -4,13 +4,20 @@
  */
 package com.hvh.service.impl;
 
+import com.hvh.dto.PageResponseDTO;
+import com.hvh.dto.PropertyRequestDTO;
+import com.hvh.pojo.Category;
 import com.hvh.pojo.Property;
+import com.hvh.pojo.Users;
+import com.hvh.repository.CategoryRepository;
 import com.hvh.repository.PropertyRepository;
 import com.hvh.service.PropertyService;
-import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 /**
  *
  * @author acer
@@ -21,23 +28,114 @@ public class PropertyServiceImpl implements PropertyService {
     @Autowired
     private PropertyRepository propertyRepo;
 
-    @Override
-    public List<Property> getProperties(Map<String, String> params) {
-        return this.propertyRepo.getProperties(params);
-    }
+    @Autowired
+    private CategoryRepository categoryRepo;
 
     @Override
-    public void addOrUpdateProperty(Property property) {
-        this.propertyRepo.addOrUpdateProperty(property);
+    public PageResponseDTO<Property> getProperties(Map<String, String> params) {
+        List<Property> items = this.propertyRepo.getProperties(params);
+        long total = this.propertyRepo.countProperties(params);
+
+        int page = params != null ? Integer.parseInt(params.getOrDefault("page", "1")) : 1;
+        int size = 10;
+        if (params != null && params.get("size") != null && !params.get("size").isBlank()) {
+            size = Integer.parseInt(params.get("size"));
+        }
+
+        return new PageResponseDTO<>(items, page, size, total);
     }
 
     @Override
     public Property getPropertyById(int id) {
-        return this.propertyRepo.getPropertyById(id);
+        Property property = this.propertyRepo.getPropertyById(id);
+        if (property == null) {
+            throw new RuntimeException("Không tìm thấy bất động sản với id " + id);
+        }
+        return property;
     }
 
     @Override
-    public void deleteProperty(int id) {
+    public Property createProperty(PropertyRequestDTO dto, Users seller) {
+        validate(dto);
+
+        Property property = new Property();
+        mapDtoToEntity(dto, property);
+        property.setSellerId(seller);
+        property.setStatus(dto.getStatus() != null ? dto.getStatus() : "PENDING");
+        property.setCreatedAt(new Date());
+        property.setUpdatedAt(new Date());
+
+        this.propertyRepo.addOrUpdateProperty(property);
+        return property;
+    }
+
+    @Override
+    public Property updateProperty(int id, PropertyRequestDTO dto, Users currentUser) {
+        validate(dto);
+
+        Property property = this.getPropertyById(id);
+        assertOwnerOrAdmin(property, currentUser);
+
+        mapDtoToEntity(dto, property);
+        property.setUpdatedAt(new Date());
+
+        this.propertyRepo.addOrUpdateProperty(property);
+        return property;
+    }
+
+    @Override
+    public void deleteProperty(int id, Users currentUser) {
+        Property property = this.getPropertyById(id);
+        assertOwnerOrAdmin(property, currentUser);
+
         this.propertyRepo.deleteProperty(id);
+    }
+
+    private void validate(PropertyRequestDTO dto) {
+        if (dto.getTitle() == null || dto.getTitle().isBlank()) {
+            throw new IllegalArgumentException("Tiêu đề không được để trống");
+        }
+        if (dto.getAddress() == null || dto.getAddress().isBlank()) {
+            throw new IllegalArgumentException("Địa chỉ không được để trống");
+        }
+        if (dto.getPrice() == null || dto.getPrice().signum() <= 0) {
+            throw new IllegalArgumentException("Giá phải lớn hơn 0");
+        }
+        if (dto.getCategoryId() == null) {
+            throw new IllegalArgumentException("Thiếu categoryId");
+        }
+    }
+
+    private void mapDtoToEntity(PropertyRequestDTO dto, Property property) {
+        property.setTitle(dto.getTitle());
+        property.setDescription(dto.getDescription());
+        property.setAddress(dto.getAddress());
+        property.setPrice(dto.getPrice());
+        property.setArea(dto.getArea());
+        if (dto.getStatus() != null) {
+            property.setStatus(dto.getStatus());
+        }
+        property.setDistrict(dto.getDistrict());
+        property.setBedrooms(dto.getBedrooms());
+        property.setLatitude(dto.getLatitude());
+        property.setLongitude(dto.getLongitude());
+
+        Category category = this.categoryRepo.getCategoryById(dto.getCategoryId());
+        if (category == null) {
+            throw new IllegalArgumentException("categoryId không hợp lệ: " + dto.getCategoryId());
+        }
+        property.setCategoryId(category);
+    }
+    private void assertOwnerOrAdmin(Property property, Users currentUser) {
+        if (currentUser == null) {
+            throw new RuntimeException("Bạn cần đăng nhập");
+        }
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getUserRole());
+        boolean isOwner = property.getSellerId() != null
+                && property.getSellerId().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new RuntimeException("Bạn không có quyền chỉnh sửa tin này");
+        }
     }
 }

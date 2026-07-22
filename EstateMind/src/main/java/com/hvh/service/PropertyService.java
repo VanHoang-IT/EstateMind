@@ -4,16 +4,19 @@
  */
 package com.hvh.service;
 
+import com.hvh.dto.PageResponseDTO;
+import com.hvh.dto.PropertyRequestDTO;
 import com.hvh.pojo.Property;
-import java.util.List;
+import com.hvh.pojo.Users;
 import java.util.Map;
 /**
  *
  * @author acer
  */
 public interface PropertyService {
-    List<Property> getProperties(Map<String, String> params);
-    void addOrUpdateProperty(Property property);
+    PageResponseDTO<Property> getProperties(Map<String, String> params);
     Property getPropertyById(int id);
-    void deleteProperty(int id);
+    Property createProperty(PropertyRequestDTO dto, Users seller);
+    Property updateProperty(int id, PropertyRequestDTO dto, Users currentUser);
+    void deleteProperty(int id, Users currentUser);
 }

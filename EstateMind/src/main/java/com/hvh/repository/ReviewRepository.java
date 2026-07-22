@@ -13,14 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface ReviewRepository {
-
     List<Review> getReviews(Map<String, String> params);
-
     void addReviewOrUpdate(Review review);
-
-    Review getReviewById(Long id);
-
-    void deleteReview(Long id);
-
-    List<Review> getReviewsByPropertyId(Long propertyId);
+    Review getReviewById(Integer id);
+    void deleteReview(Integer id);
+    List<Review> getReviewsByPropertyId(Integer propertyId);
 }

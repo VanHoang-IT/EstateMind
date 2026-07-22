@@ -20,9 +20,18 @@ import com.nimbusds.jwt.SignedJWT;
 import java.util.Date;
 
 public class JwtUtils {
-    // SECRET nên được lưu bằng biến môi trường,
-    private static final String SECRET = "12345678901234567890123456789012"; // 32 ký tự (AES key)
-    private static final long EXPIRATION_MS = 86400000; // 1 ngày
+    private static final String SECRET = resolveSecret();
+    private static final long EXPIRATION_MS = 86400000;
+
+    private static String resolveSecret() {
+        String fromEnv = System.getenv("JWT_SECRET");
+        if (fromEnv != null && fromEnv.length() >= 32) {
+            return fromEnv;
+        }
+        System.err.println("[WARNING] JWT_SECRET env var not set (or too short, needs >= 32 chars). "
+                + "Using an insecure development-only fallback. Set JWT_SECRET before deploying.");
+        return "dev-only-insecure-secret-32chars!!";
+    }
 
     public static String generateToken(String username) throws Exception {
         JWSSigner signer = new MACSigner(SECRET);

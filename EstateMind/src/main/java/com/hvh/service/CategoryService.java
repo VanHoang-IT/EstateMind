@@ -12,4 +12,5 @@ import java.util.List;
  */
 public interface CategoryService {
     List<Category> getCates();
+    Category getCategoryById(int id);
 }
