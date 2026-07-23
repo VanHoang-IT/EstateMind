@@ -4,6 +4,7 @@
  */
 package com.hvh.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,6 +54,7 @@ public class Category implements Serializable {
     @Column(name = "id")
     private Integer id;
     @OneToMany(mappedBy = "categoryId")
+    @JsonIgnore
     private Set<Property> propertySet;
     @JoinColumn(name = "property_type_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
