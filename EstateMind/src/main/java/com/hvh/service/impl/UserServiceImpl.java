@@ -11,6 +11,7 @@ import com.hvh.repository.UserRepository;
 import com.hvh.service.UserService;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -30,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service("userDetailsService")
 public class UserServiceImpl implements UserService {
 
+    private static final Set<String> ALLOWED_ROLES = Set.of("ROLE_USER", "ROLE_ADMIN");
+
     @Autowired
     private UserRepository userRepo;
 
@@ -42,6 +45,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public Users getUserByUsername(String username) {
         return this.userRepo.getUserByUsername(username);
+    }
+
+    @Override
+    public Users getUserById(int id) {
+        Users u = this.userRepo.getUserById(id);
+        if (u == null) {
+            throw new RuntimeException("Không tìm thấy người dùng với id " + id);
+        }
+        return u;
     }
 
     @Override
@@ -61,7 +73,7 @@ public class UserServiceImpl implements UserService {
                         ObjectUtils.asMap("resource_type", "auto"));
                 u.setAvatar(res.get("secure_url").toString());
             } catch (IOException ex) {
-                Logger.getLogger(PropertyServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(UserServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -74,10 +86,10 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new UsernameNotFoundException("Không tồn tại!");
         }
-        
+
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority(user.getUserRole()));
-        
+
         return new org.springframework.security.core.userdetails.User(user.getUsername(),
                 user.getPassword(), authorities);
     }
@@ -87,4 +99,16 @@ public class UserServiceImpl implements UserService {
         return this.userRepo.authenticate(username, password);
     }
 
+    @Override
+    public List<Users> getUsers(Integer page) {
+        return this.userRepo.getUsers(page);
+    }
+
+    @Override
+    public Users updateRole(int id, String role) {
+        if (role == null || !ALLOWED_ROLES.contains(role)) {
+            throw new IllegalArgumentException("Role không hợp lệ, chỉ chấp nhận: " + ALLOWED_ROLES);
+        }
+        return this.userRepo.updateRole(id, role);
+    }
 }

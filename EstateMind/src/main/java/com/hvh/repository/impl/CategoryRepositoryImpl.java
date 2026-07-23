@@ -34,10 +34,30 @@ public class CategoryRepositoryImpl implements CategoryRepository {
 
         return query.getResultList();
     }
-    
+
     @Override
     public Category getCategoryById(int id) {
         Session session = this.factory.getObject().getCurrentSession();
         return session.get(Category.class, id);
+    }
+
+    @Override
+    public Category addOrUpdateCategory(Category category) {
+        Session session = this.factory.getObject().getCurrentSession();
+        if (category.getId() == null) {
+            session.persist(category);
+        } else {
+            session.merge(category);
+        }
+        return category;
+    }
+
+    @Override
+    public void deleteCategory(int id) {
+        Session session = this.factory.getObject().getCurrentSession();
+        Category category = session.get(Category.class, id);
+        if (category != null) {
+            session.remove(category);
+        }
     }
 }

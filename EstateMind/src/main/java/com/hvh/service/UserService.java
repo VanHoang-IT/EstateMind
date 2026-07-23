@@ -1,6 +1,7 @@
 package com.hvh.service;
 
 import com.hvh.pojo.Users;
+import java.util.List;
 import java.util.Map;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,7 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
  * @author acer
  */
 public interface UserService extends UserDetailsService {
-    Users getUserByUsername(String username) ;
+    Users getUserByUsername(String username);
+    Users getUserById(int id);
     Users addUser(Map<String, String> params, MultipartFile avatar);
     boolean authenticate(String username, String password);
+    List<Users> getUsers(Integer page);
+    Users updateRole(int id, String role);
 }

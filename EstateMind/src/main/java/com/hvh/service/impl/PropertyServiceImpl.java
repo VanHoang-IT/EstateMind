@@ -8,16 +8,23 @@ import com.hvh.dto.PageResponseDTO;
 import com.hvh.dto.PropertyRequestDTO;
 import com.hvh.pojo.Category;
 import com.hvh.pojo.Property;
+import com.hvh.pojo.PropertyImages;
 import com.hvh.pojo.Users;
 import com.hvh.repository.CategoryRepository;
 import com.hvh.repository.PropertyRepository;
 import com.hvh.service.PropertyService;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
  *
  * @author acer
@@ -30,6 +37,9 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Autowired
     private CategoryRepository categoryRepo;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     @Override
     public PageResponseDTO<Property> getProperties(Map<String, String> params) {
@@ -91,6 +101,28 @@ public class PropertyServiceImpl implements PropertyService {
         this.propertyRepo.deleteProperty(id);
     }
 
+    @Override
+    public void addPropertyImage(int propertyId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return;
+        }
+        Property property = this.getPropertyById(propertyId);
+
+        try {
+            Map res = this.cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap("resource_type", "auto"));
+
+            PropertyImages image = new PropertyImages();
+            image.setPropertyId(property);
+            image.setImageUrl(res.get("secure_url").toString());
+            image.setIsPrimary(true);
+
+            this.propertyRepo.addPropertyImage(image);
+        } catch (IOException ex) {
+            Logger.getLogger(PropertyServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     private void validate(PropertyRequestDTO dto) {
         if (dto.getTitle() == null || dto.getTitle().isBlank()) {
             throw new IllegalArgumentException("Tiêu đề không được để trống");
@@ -126,16 +158,21 @@ public class PropertyServiceImpl implements PropertyService {
         }
         property.setCategoryId(category);
     }
+
     private void assertOwnerOrAdmin(Property property, Users currentUser) {
         if (currentUser == null) {
             throw new RuntimeException("Bạn cần đăng nhập");
         }
-        boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getUserRole());
+        boolean isAdmin = isAdminRole(currentUser.getUserRole());
         boolean isOwner = property.getSellerId() != null
                 && property.getSellerId().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
             throw new RuntimeException("Bạn không có quyền chỉnh sửa tin này");
         }
+    }
+
+    private boolean isAdminRole(String role) {
+        return "ADMIN".equalsIgnoreCase(role) || "ROLE_ADMIN".equalsIgnoreCase(role);
     }
 }

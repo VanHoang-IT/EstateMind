@@ -10,6 +10,16 @@
     <div th:replace="base :: header"></div>
     <section class="container mt-4">
 
+        <div th:if="${errMsg}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${errMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${successMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
         <div class="mb-3">
             <a th:href="@{/admin/properties}" class="btn btn-primary">
                 Thêm bất động sản
@@ -33,7 +43,7 @@
                     <td th:text="${p.id}"></td>
                     <td th:text="${p.title}"></td>
                     <td th:text="${p.address}"></td>
-                    <td th:text="${p.categoryId.name}"></td>
+                    <td th:text="${p.categoryId?.name}"></td>
                     <td th:text="${p.price}"></td>
                     <td th:text="${p.area}"></td>
                     <td th:text="${p.status}"></td>
@@ -42,10 +52,17 @@
                            th:href="@{/admin/properties/{id}(id=${p.id})}">
                             Cập nhật
                         </a>
-                        <button class="btn btn-danger"
-                                th:onclick="'deleteProperty(\'' + @{/api/properties/} + ${p.id} + '\')'">
-                            Xóa
-                        </button>
+                        <form method="post" style="display:inline"
+                              th:action="@{/admin/properties/{id}/delete(id=${p.id})}"
+                              onsubmit="return confirm('Bạn chắc chắn xóa?');">
+                            <button type="submit" class="btn btn-danger">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(properties)}">
+                    <td colspan="8" class="text-center text-muted">
+                        Chưa có bất động sản nào.
                     </td>
                 </tr>
             </tbody>

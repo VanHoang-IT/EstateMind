@@ -48,6 +48,9 @@ public class ApiPropertyController {
         }
     }
 
+    // Các endpoint ghi (create/update/delete) đặt dưới /secure/** để khớp với
+    // ApiSecurityConfigs (chỉ /api/secure/** yêu cầu đăng nhập, phần còn lại permitAll).
+
     @PostMapping("/secure/properties")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> create(@RequestBody PropertyRequestDTO dto, Authentication auth) {
@@ -74,6 +77,8 @@ public class ApiPropertyController {
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (RuntimeException e) {
+            // covers "not found" and "not the owner" — same as SmartHotel's
+            // ApiReservationController pattern (RuntimeException -> 404/403-ish)
             return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
         }
     }

@@ -30,4 +30,17 @@ public class CategoryServiceImpl implements CategoryService {
     public Category getCategoryById(int id) {
         return this.cateRepo.getCategoryById(id);
     }
+
+    @Override
+    public Category addOrUpdateCategory(Category category) {
+        if (category.getName() == null || category.getName().isBlank()) {
+            throw new IllegalArgumentException("Tên danh mục không được để trống");
+        }
+        return this.cateRepo.addOrUpdateCategory(category);
+    }
+
+    @Override
+    public void deleteCategory(int id) {
+        this.cateRepo.deleteCategory(id);
+    }
 }

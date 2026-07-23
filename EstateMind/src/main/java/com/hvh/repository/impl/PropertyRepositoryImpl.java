@@ -83,7 +83,7 @@ public class PropertyRepositoryImpl implements PropertyRepository {
         if (size == null || size.isBlank()) {
             return defaultSize;
         }
-        return Math.min(Integer.parseInt(size), 50); // hard cap so nobody asks for size=100000
+        return Math.min(Integer.parseInt(size), 50);
     }
 
     private int resolvePage(Map<String, String> params) {

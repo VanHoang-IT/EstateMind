@@ -32,7 +32,7 @@ public class ApiReviewController {
     private UserService userService;
 
     @GetMapping("/properties/{propertyId}/reviews")
-    public ResponseEntity<List<Review>> byProperty(@PathVariable Integer propertyId) {
+    public ResponseEntity<List<Review>> byProperty(@PathVariable("propertyId") Integer propertyId) {
         return new ResponseEntity<>(this.reviewService.getReviewsByPropertyId(propertyId), HttpStatus.OK);
     }
 
@@ -52,7 +52,7 @@ public class ApiReviewController {
 
     @DeleteMapping("/secure/reviews/{reviewId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> delete(@PathVariable Integer reviewId, Authentication auth) {
+    public ResponseEntity<?> delete(@PathVariable("reviewId") Integer reviewId, Authentication auth) {
         try {
             Users currentUser = this.userService.getUserByUsername(auth.getName());
             this.reviewService.deleteReview(reviewId, currentUser);
@@ -62,4 +62,5 @@ public class ApiReviewController {
         }
     }
 }
+
 

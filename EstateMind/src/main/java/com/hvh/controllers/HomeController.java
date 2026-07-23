@@ -33,9 +33,11 @@ public class HomeController {
 
     @RequestMapping("/")
     public String index(Model model, @RequestParam Map<String, String> params) {
+
         model.addAttribute("properties", this.prodService.getProperties(params).getItems());
 
         return "index";
     }
 }
+
 
