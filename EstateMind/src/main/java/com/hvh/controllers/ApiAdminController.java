@@ -91,7 +91,6 @@ public class ApiAdminController {
         }
     }
 
-    // ---- QUẢN LÝ BẤT ĐỘNG SẢN (bỏ qua ràng buộc "chỉ chủ tin mới sửa được") ----
     @GetMapping("/properties")
     public ResponseEntity<PageResponseDTO<Property>> getProperties(@RequestParam Map<String, String> params) {
         return new ResponseEntity<>(this.propertyService.getProperties(params), HttpStatus.OK);
@@ -140,7 +139,6 @@ public class ApiAdminController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    // ---- QUẢN LÝ DANH MỤC (tương đương RoomType) ----
     @GetMapping("/categories")
     public ResponseEntity<List<Category>> getCategories() {
         return new ResponseEntity<>(this.categoryService.getCates(), HttpStatus.OK);
@@ -171,7 +169,6 @@ public class ApiAdminController {
         this.categoryService.deleteCategory(id);
     }
 
-    // ---- KIỂM DUYỆT ĐÁNH GIÁ ----
     @GetMapping("/reviews")
     public ResponseEntity<List<Review>> getReviews(@RequestParam Map<String, String> params) {
         return new ResponseEntity<>(this.reviewService.getReviews(params), HttpStatus.OK);

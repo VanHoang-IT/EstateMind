@@ -11,7 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
@@ -21,6 +20,8 @@ import jakarta.persistence.TemporalType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -58,9 +59,13 @@ public class ChatHistory implements Serializable {
     @Column(name = "created_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
-    @Lob
+    // Cột DB là jsonb — khai Java kiểu String (không phải Object) và dùng
+    // @JdbcTypeCode(SqlTypes.JSON) để Hibernate bind đúng kiểu JSON xuống
+    // Postgres. Trước đây khai kiểu Object khiến Hibernate bind bằng
+    // Types.JAVA_OBJECT (mã 2000) -> lỗi "Unsupported Types value: 2000".
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "source_refs")
-    private Object sourceRefs;
+    private String sourceRefs;
     @JoinColumn(name = "session_id", referencedColumnName = "id")
     @ManyToOne
     private ChatSession sessionId;
@@ -113,11 +118,11 @@ public class ChatHistory implements Serializable {
         this.createdDate = createdDate;
     }
 
-    public Object getSourceRefs() {
+    public String getSourceRefs() {
         return sourceRefs;
     }
 
-    public void setSourceRefs(Object sourceRefs) {
+    public void setSourceRefs(String sourceRefs) {
         this.sourceRefs = sourceRefs;
     }
 

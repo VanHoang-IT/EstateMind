@@ -50,7 +50,8 @@ import java.util.Date;
     @NamedQuery(name = "Property.findByBedrooms", query = "SELECT p FROM Property p WHERE p.bedrooms = :bedrooms"),
     @NamedQuery(name = "Property.findByCrawlDate", query = "SELECT p FROM Property p WHERE p.crawlDate = :crawlDate"),
     @NamedQuery(name = "Property.findByLegalVerified", query = "SELECT p FROM Property p WHERE p.legalVerified = :legalVerified"),
-    @NamedQuery(name = "Property.findByUrlCrawl", query = "SELECT p FROM Property p WHERE p.urlCrawl = :urlCrawl")})
+    @NamedQuery(name = "Property.findByUrlCrawl", query = "SELECT p FROM Property p WHERE p.urlCrawl = :urlCrawl"),
+    @NamedQuery(name = "Property.findByMainImage", query = "SELECT p FROM Property p WHERE p.mainImage = :mainImage")})
 public class Property implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -111,6 +112,9 @@ public class Property implements Serializable {
     @Size(max = 255)
     @Column(name = "url_crawl")
     private String urlCrawl;
+    @Size(max = 255)
+    @Column(name = "main_image")
+    private String mainImage;
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @ManyToOne
     private Category categoryId;
@@ -274,6 +278,14 @@ public class Property implements Serializable {
 
     public void setUrlCrawl(String urlCrawl) {
         this.urlCrawl = urlCrawl;
+    }
+
+    public String getMainImage() {
+        return mainImage;
+    }
+
+    public void setMainImage(String mainImage) {
+        this.mainImage = mainImage;
     }
 
     public Category getCategoryId() {

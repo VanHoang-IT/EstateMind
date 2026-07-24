@@ -16,12 +16,6 @@ function buildQuery(filters: PropertyFilters): string {
 }
 
 export const propertyService = {
-  /**
-   * Trả PageResponse<Property> đầy đủ (items + totalPages...) thay vì mảng
-   * trần — khớp với PageResponseDTO backend trả về từ ngày sửa phân trang.
-   * Nếu fetch lỗi, NÉM lỗi ra ngoài (không còn nuốt lỗi rồi trả mảng rỗng),
-   * để UI biết mà hiển thị trạng thái lỗi thay vì im lặng hiện "không có tin".
-   */
   async getProperties(filters: PropertyFilters = {}): Promise<PageResponse<Property>> {
     const query = buildQuery(filters);
     const res = await fetch(`${API_URL}/properties?${query}`, { cache: "no-store" });
@@ -29,11 +23,23 @@ export const propertyService = {
     return res.json();
   },
 
-  async getPropertyById(id: number | string): Promise<Property> {
-    const res = await fetch(`${API_URL}/properties/${id}`, { cache: "no-store" });
-    await throwIfNotOk(res);
-    return res.json();
-  },
+  async getPropertyById(
+  id: number | string
+): Promise<Property> {
+  const res = await fetch(
+    `${API_URL}/properties/${id}`,
+    {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  await throwIfNotOk(res);
+
+  return res.json();
+},
 
   async createProperty(input: PropertyInput): Promise<Property> {
     const res = await authFetch("/secure/properties", {
@@ -52,7 +58,23 @@ export const propertyService = {
     await throwIfNotOk(res);
     return res.json();
   },
+  async uploadPropertyImage(
+  propertyId: number | string,
+  file: File
+): Promise<void> {
+  const formData = new FormData();
+  formData.append("file", file);
 
+  const res = await authFetch(
+    `/secure/properties/${propertyId}/images`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  await throwIfNotOk(res);
+},
   async deleteProperty(id: number | string): Promise<void> {
     const res = await authFetch(`/secure/properties/${id}`, { method: "DELETE" });
     await throwIfNotOk(res);

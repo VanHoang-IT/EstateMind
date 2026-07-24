@@ -6,7 +6,6 @@ package com.hvh.repository.impl;
 
 import com.hvh.pojo.ChatSession;
 import com.hvh.repository.ChatSessionRepository;
-import java.util.UUID;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;

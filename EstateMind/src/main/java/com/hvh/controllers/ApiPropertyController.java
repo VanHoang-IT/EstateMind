@@ -9,16 +9,17 @@ import com.hvh.service.UserService;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-
 /**
  *
  * @author acer
@@ -39,17 +40,24 @@ public class ApiPropertyController {
         return new ResponseEntity<>(this.propertyService.getProperties(params), HttpStatus.OK);
     }
 
-    @GetMapping("/properties/{propertyId}")
+    @GetMapping(
+            value = "/properties/{propertyId}",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<?> details(@PathVariable(value = "propertyId") int id) {
         try {
-            return new ResponseEntity<>(this.propertyService.getPropertyById(id), HttpStatus.OK);
+            return new ResponseEntity<>(
+                    this.propertyService.getPropertyById(id),
+                    HttpStatus.OK
+            );
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            e.printStackTrace();
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
-
-    // Các endpoint ghi (create/update/delete) đặt dưới /secure/** để khớp với
-    // ApiSecurityConfigs (chỉ /api/secure/** yêu cầu đăng nhập, phần còn lại permitAll).
 
     @PostMapping("/secure/properties")
     @PreAuthorize("isAuthenticated()")
@@ -68,8 +76,8 @@ public class ApiPropertyController {
     @PutMapping("/secure/properties/{propertyId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> update(@PathVariable(value = "propertyId") int id,
-                                     @RequestBody PropertyRequestDTO dto,
-                                     Authentication auth) {
+            @RequestBody PropertyRequestDTO dto,
+            Authentication auth) {
         try {
             Users currentUser = this.userService.getUserByUsername(auth.getName());
             Property updated = this.propertyService.updateProperty(id, dto, currentUser);
@@ -77,9 +85,24 @@ public class ApiPropertyController {
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (RuntimeException e) {
-            // covers "not found" and "not the owner" — same as SmartHotel's
-            // ApiReservationController pattern (RuntimeException -> 404/403-ish)
             return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @PostMapping(
+            value = "/secure/properties/{propertyId}/images",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> uploadImage(@PathVariable(value = "propertyId") int id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            this.propertyService.addPropertyImage(id, file);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

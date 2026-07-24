@@ -4,7 +4,6 @@
  */
 package com.hvh.dto;
 
-
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,6 +25,9 @@ public class PropertyRequestDTO {
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
+    @Size(max = 255)
+    private String mainImage;
+
     @NotNull(message = "Giá không được để trống")
     @DecimalMin(value = "0", inclusive = false, message = "Giá phải lớn hơn 0")
     private BigDecimal price;
@@ -46,7 +48,6 @@ public class PropertyRequestDTO {
     private Integer categoryId;
 
     // getters/setters
-
     public String getTitle() {
         return title;
     }
@@ -134,5 +135,12 @@ public class PropertyRequestDTO {
     public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
     }
-}
 
+    public String getMainImage() {
+        return mainImage;
+    }
+
+    public void setMainImage(String mainImage) {
+        this.mainImage = mainImage;
+    }
+}

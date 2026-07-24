@@ -25,6 +25,8 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 
 /**
  *
@@ -128,6 +130,25 @@ public class ChatSession implements Serializable {
         this.userId = userId;
     }
 
+
+    @PrePersist
+    public void prePersist() {
+        Date now = new Date();
+
+        if (this.createdAt == null) {
+            this.createdAt = now;
+        }
+
+        if (this.updatedAt == null) {
+            this.updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = new Date();
+    }
+
     @Override
     public int hashCode() {
         int hash = 0;
@@ -152,5 +173,5 @@ public class ChatSession implements Serializable {
     public String toString() {
         return "com.hvh.pojo.ChatSession[ id=" + id + " ]";
     }
-    
+
 }

@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+} from "next/font/google";
+
 import "./globals.css";
 
 import Header from "@/components/Header";
@@ -17,9 +21,38 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const themeScript = `
+  (() => {
+    try {
+      const savedTheme =
+        localStorage.getItem("estate-theme");
+
+      const prefersDark =
+        window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+
+      const isDark =
+        savedTheme === "dark" ||
+        (!savedTheme && prefersDark);
+
+      document.documentElement.classList.toggle(
+        "dark",
+        isDark
+      );
+
+      document.documentElement.style.colorScheme =
+        isDark ? "dark" : "light";
+    } catch {
+      // Giữ chế độ sáng nếu localStorage không khả dụng.
+    }
+  })();
+`;
+
 export const metadata: Metadata = {
   title: "Batdongsan - Nền tảng BĐS số 1",
-  description: "Tìm kiếm nhà đất, căn hộ nhanh chóng và chính xác.",
+  description:
+    "Tìm kiếm nhà đất, căn hộ nhanh chóng và chính xác.",
 };
 
 export default function RootLayout({
@@ -28,11 +61,33 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html
+      lang="vi"
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: themeScript,
+          }}
+        />
+      </head>
+
+      <body
+        className={`
+          ${geistSans.variable}
+          ${geistMono.variable}
+          min-h-screen
+          bg-background
+          text-foreground
+          antialiased
+        `}
+      >
         <AuthProvider>
           <Header />
-          <main className="flex-grow">{children}</main>
+
+          {children}
+
           <Footer />
           <ChatWidget />
         </AuthProvider>

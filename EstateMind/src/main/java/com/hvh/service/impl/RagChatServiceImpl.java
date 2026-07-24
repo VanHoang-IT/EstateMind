@@ -1,101 +1,3 @@
-///*
-// * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-// * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
-// */
-//package com.hvh.service.impl;
-//
-//import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.hvh.dto.ChatResponseDTO;
-//import com.hvh.pojo.ChatHistory;
-//import com.hvh.pojo.ChatSession;
-//import com.hvh.pojo.Users;
-//import com.hvh.repository.ChatHistoryRepository;
-//import com.hvh.repository.ChatSessionRepository;
-//import com.hvh.service.RagChatService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpEntity;
-//import org.springframework.http.HttpHeaders;
-//import org.springframework.http.MediaType;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.stereotype.Service;
-//import org.springframework.web.client.RestTemplate;
-//
-//import java.util.HashMap;
-//import java.util.List;
-//import java.util.Map;
-//
-///**
-// *
-// * @author acer
-// */
-//@Service
-//public class RagChatServiceImpl implements RagChatService {
-//
-//    @Autowired
-//    private ChatSessionRepository chatSessionRepository;
-//
-//    @Autowired
-//    private ChatHistoryRepository chatHistoryRepository;
-//
-//    private final ObjectMapper objectMapper = new ObjectMapper();
-//    private static final String PYTHON_AI_URL = "http://localhost:8000/api/chat";
-//    private final RestTemplate restTemplate = new RestTemplate();
-//
-//    @Override
-//    public ChatResponseDTO generateFullAnswer(String userQuestion, Integer sessionId, Users currentUser) {
-//        
-//        ChatSession chatSession = null;
-//        if (sessionId != null) {
-//            chatSession = chatSessionRepository.getSessionById(sessionId);
-//        }
-//        
-//        if (chatSession == null) {
-//            chatSession = new ChatSession();
-//            chatSession.setUserId(currentUser);
-//            chatSession.setTitle(userQuestion.length() > 50 ? userQuestion.substring(0, 50) + "..." : userQuestion);
-//            chatSession = chatSessionRepository.saveSession(chatSession);
-//        }
-//
-//        String aiAnswer = "Xin lỗi, hệ thống AI đang bận.";
-//        String sourceRefsJson = "[]";
-//
-//        try {
-//            HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.APPLICATION_JSON);
-//
-//            Map<String, Object> requestBody = new HashMap<>();
-//            requestBody.put("question", userQuestion);
-//            requestBody.put("sessionId", chatSession.getId());
-//
-//            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-//
-//            ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_AI_URL, request, Map.class);
-//            
-//            if (response.getBody() != null && "success".equals(response.getBody().get("status"))) {
-//                aiAnswer = (String) response.getBody().get("answer");
-//
-//                List<String> sources = (List<String>) response.getBody().get("sources");
-//                if (sources != null) {
-//                    sourceRefsJson = objectMapper.writeValueAsString(sources);
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        ChatHistory history = new ChatHistory();
-//        history.setUserId(currentUser);
-//        history.setQuestion(userQuestion);
-//        history.setAnswer(aiAnswer);
-//        history.setSessionId(chatSession);
-//        history.setSourceRefs(sourceRefsJson);
-//        
-//        chatHistoryRepository.saveHistory(history);
-//
-//        return new ChatResponseDTO(aiAnswer, chatSession.getId());
-//    }
-//}
-
 package com.hvh.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -106,6 +8,10 @@ import com.hvh.pojo.Users;
 import com.hvh.repository.ChatHistoryRepository;
 import com.hvh.repository.ChatSessionRepository;
 import com.hvh.service.RagChatService;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,18 +21,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class RagChatServiceImpl implements RagChatService {
 
-    private static final Logger logger = LoggerFactory.getLogger(RagChatServiceImpl.class);
-    private static final String PYTHON_AI_URL = "http://localhost:8000/api/chat";
+    private static final Logger logger
+            = LoggerFactory.getLogger(RagChatServiceImpl.class);
+
+    private static final String PYTHON_AI_URL
+            = "http://localhost:8000/api/chat";
 
     @Autowired
     private ChatSessionRepository chatSessionRepository;
@@ -134,71 +39,194 @@ public class RagChatServiceImpl implements RagChatService {
     @Autowired
     private ChatHistoryRepository chatHistoryRepository;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
-    // Cấu hình RestTemplate có Timeout để tránh treo luồng Java khi Python chậm
     public RagChatServiceImpl() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5)); // Timeout kết nối
-        factory.setReadTimeout(Duration.ofSeconds(30));    // Timeout chờ AI xử lý RAG
+        this.objectMapper = new ObjectMapper();
+
+        SimpleClientHttpRequestFactory factory
+                = new SimpleClientHttpRequestFactory();
+
+        // Dùng số mili giây để tương thích với nhiều phiên bản Spring.
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(30_000);
+
         this.restTemplate = new RestTemplate(factory);
     }
 
     @Override
-    public ChatResponseDTO generateFullAnswer(String userQuestion, Integer sessionId, Users currentUser) {
-        
-        ChatSession chatSession = null;
-        if (sessionId != null) {
-            chatSession = chatSessionRepository.getSessionById(sessionId);
+    @Transactional
+    public ChatResponseDTO generateFullAnswer(
+            String userQuestion,
+            Integer sessionId,
+            Users currentUser) {
+
+        if (userQuestion == null || userQuestion.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Câu hỏi không được để trống"
+            );
         }
-        
+
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new IllegalArgumentException(
+                    "Người dùng không hợp lệ"
+            );
+        }
+
+        String normalizedQuestion = userQuestion.trim();
+
+        ChatSession chatSession = null;
+
+        if (sessionId != null) {
+            chatSession
+                    = this.chatSessionRepository
+                            .getSessionById(sessionId);
+
+            if (chatSession != null
+                    && chatSession.getUserId() != null
+                    && !currentUser.getId().equals(
+                            chatSession.getUserId().getId()
+                    )) {
+                throw new SecurityException(
+                        "Bạn không có quyền sử dụng phiên chat này"
+                );
+            }
+        }
+
         if (chatSession == null) {
             chatSession = new ChatSession();
             chatSession.setUserId(currentUser);
-            chatSession.setTitle(userQuestion.length() > 50 ? userQuestion.substring(0, 50) + "..." : userQuestion);
-            // Đảm bảo entity đã có logic @PrePersist hoặc gán thời gian tạo nếu DB yêu cầu NOT NULL
-            chatSession = chatSessionRepository.saveSession(chatSession);
+
+            chatSession.setTitle(
+                    normalizedQuestion.length() > 50
+                            ? normalizedQuestion.substring(0, 50) + "..."
+                            : normalizedQuestion
+            );
+
+            /*
+             * Nếu ChatSession đã có @PrePersist thì hai field
+             * thời gian sẽ được tự động gán.
+             */
+            chatSession
+                    = this.chatSessionRepository
+                            .saveSession(chatSession);
+        } else {
+            /*
+             * Cập nhật thời gian hoạt động của phiên chat.
+             * Nếu ChatSession có @PreUpdate thì Hibernate
+             * cũng sẽ tự cập nhật updatedAt.
+             */
+            chatSession.setUpdatedAt(new Date());
+
+            chatSession
+                    = this.chatSessionRepository
+                            .saveSession(chatSession);
         }
 
-        String aiAnswer = "Xin lỗi, hệ thống AI hiện đang bận hoặc không phản hồi. Vui lòng thử lại sau.";
+        String aiAnswer
+                = "Xin lỗi, hệ thống AI hiện đang bận hoặc không phản hồi. "
+                + "Vui lòng thử lại sau.";
+
         String sourceRefsJson = "[]";
 
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(
+                    List.of(MediaType.APPLICATION_JSON)
+            );
 
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("question", userQuestion);
-            requestBody.put("sessionId", chatSession.getId());
+            Map<String, Object> requestBody
+                    = new HashMap<>();
 
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+            requestBody.put(
+                    "question",
+                    normalizedQuestion
+            );
 
-            // Bắn request sang Python AI Engine
-            ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_AI_URL, request, Map.class);
-            
-            if (response.getBody() != null && "success".equals(response.getBody().get("status"))) {
-                aiAnswer = (String) response.getBody().get("answer");
+            requestBody.put(
+                    "sessionId",
+                    chatSession.getId()
+            );
 
-                List<String> sources = (List<String>) response.getBody().get("sources");
-                if (sources != null && !sources.isEmpty()) {
-                    sourceRefsJson = objectMapper.writeValueAsString(sources);
+            HttpEntity<Map<String, Object>> request
+                    = new HttpEntity<>(
+                            requestBody,
+                            headers
+                    );
+
+            ResponseEntity<Map> response
+                    = this.restTemplate.postForEntity(
+                            PYTHON_AI_URL,
+                            request,
+                            Map.class
+                    );
+
+            Map responseBody = response.getBody();
+
+            if (responseBody != null
+                    && "success".equals(
+                            String.valueOf(
+                                    responseBody.get("status")
+                            )
+                    )) {
+
+                Object answerValue
+                        = responseBody.get("answer");
+
+                if (answerValue instanceof String
+                        && !((String) answerValue).isBlank()) {
+                    aiAnswer = ((String) answerValue).trim();
                 }
+
+                Object sourcesValue
+                        = responseBody.get("sources");
+
+                if (sourcesValue instanceof List
+                        && !((List<?>) sourcesValue).isEmpty()) {
+                    sourceRefsJson
+                            = this.objectMapper.writeValueAsString(
+                                    sourcesValue
+                            );
+                }
+            } else {
+                logger.warn(
+                        "Python AI trả response không hợp lệ: {}",
+                        responseBody
+                );
             }
+
         } catch (Exception e) {
-            logger.error("Lỗi khi giao tiếp với Python AI Service tại {}: {}", PYTHON_AI_URL, e.getMessage(), e);
+            /*
+             * Không ném lỗi ra ngoài.
+             * Nếu Python AI chưa chạy, API Java vẫn trả câu fallback
+             * và lưu lịch sử chat thay vì trả HTTP 500.
+             */
+            logger.error(
+                    "Lỗi khi giao tiếp với Python AI Service tại {}: {}",
+                    PYTHON_AI_URL,
+                    e.getMessage(),
+                    e
+            );
         }
 
-        // Lưu vết lịch sử chat và nguồn tham chiếu (Minh bạch pháp lý)
         ChatHistory history = new ChatHistory();
-        history.setUserId(currentUser);
-        history.setQuestion(userQuestion);
-        history.setAnswer(aiAnswer);
-        history.setSessionId(chatSession);
-        history.setSourceRefs(sourceRefsJson);
-        
-        chatHistoryRepository.saveHistory(history);
 
-        return new ChatResponseDTO(aiAnswer, chatSession.getId());
+        history.setUserId(currentUser);
+        history.setSessionId(chatSession);
+        history.setQuestion(normalizedQuestion);
+        history.setAnswer(aiAnswer);
+        history.setSourceRefs(sourceRefsJson);
+
+        // Dòng này rất quan trọng nếu created_date là NOT NULL.
+        history.setCreatedDate(new Date());
+
+        this.chatHistoryRepository.saveHistory(history);
+
+        return new ChatResponseDTO(
+                aiAnswer,
+                chatSession.getId()
+        );
     }
 }

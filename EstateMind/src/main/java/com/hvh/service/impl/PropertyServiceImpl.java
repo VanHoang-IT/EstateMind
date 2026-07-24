@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 /**
  *
  * @author acer
@@ -138,24 +139,44 @@ public class PropertyServiceImpl implements PropertyService {
         }
     }
 
-    private void mapDtoToEntity(PropertyRequestDTO dto, Property property) {
+    private void mapDtoToEntity(
+            PropertyRequestDTO dto,
+            Property property) {
+
         property.setTitle(dto.getTitle());
         property.setDescription(dto.getDescription());
         property.setAddress(dto.getAddress());
         property.setPrice(dto.getPrice());
         property.setArea(dto.getArea());
+
         if (dto.getStatus() != null) {
             property.setStatus(dto.getStatus());
         }
+
         property.setDistrict(dto.getDistrict());
         property.setBedrooms(dto.getBedrooms());
         property.setLatitude(dto.getLatitude());
         property.setLongitude(dto.getLongitude());
-
-        Category category = this.categoryRepo.getCategoryById(dto.getCategoryId());
-        if (category == null) {
-            throw new IllegalArgumentException("categoryId không hợp lệ: " + dto.getCategoryId());
+        
+        if (dto.getMainImage() != null
+                && !dto.getMainImage().isBlank()) {
+            property.setMainImage(
+                    dto.getMainImage().trim()
+            );
         }
+
+        Category category
+                = this.categoryRepo.getCategoryById(
+                        dto.getCategoryId()
+                );
+
+        if (category == null) {
+            throw new IllegalArgumentException(
+                    "categoryId không hợp lệ: "
+                    + dto.getCategoryId()
+            );
+        }
+
         property.setCategoryId(category);
     }
 

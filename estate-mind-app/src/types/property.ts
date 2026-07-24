@@ -35,12 +35,13 @@ export interface Property {
   createdAt?: string;
   updatedAt?: string;
 
+  mainImage?: string;
+
   categoryId?: Category;
   sellerId?: Seller;
   propertyImagesSet?: PropertyImage[];
 }
 
-// Payload gửi lên khi tạo/sửa property — khớp PropertyRequestDTO bên backend.
 export interface PropertyInput {
   title: string;
   description?: string;
