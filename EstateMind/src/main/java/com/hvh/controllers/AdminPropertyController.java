@@ -4,6 +4,8 @@
  */
 package com.hvh.controllers;
 
+import java.util.List;
+import org.springframework.http.MediaType;
 import com.hvh.dto.PropertyRequestDTO;
 import com.hvh.pojo.Property;
 import com.hvh.pojo.Users;
@@ -19,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 /**
  *
  * @author acer
@@ -55,36 +58,88 @@ public class AdminPropertyController {
         return "properties";
     }
 
-    @PostMapping
-    public String create(@RequestParam Map<String, String> params,
-                          @RequestParam(value = "file", required = false) MultipartFile file,
-                          Authentication auth,
-                          RedirectAttributes redirect) {
+    @PostMapping(
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public String create(
+            @ModelAttribute PropertyRequestDTO dto,
+            @RequestParam("mainImage") MultipartFile mainImage,
+            @RequestParam(
+                    value = "propertyImages",
+                    required = false
+            ) List<MultipartFile> propertyImages,
+            Authentication auth,
+            RedirectAttributes redirect) {
+
         try {
-            Users currentUser = this.userService.getUserByUsername(auth.getName());
-            Property created = this.propertyService.createProperty(toDto(params), currentUser);
-            this.propertyService.addPropertyImage(created.getId(), file);
-            redirect.addFlashAttribute("successMsg", "Thêm bất động sản thành công!");
+            Users currentUser = this.userService
+                    .getUserByUsername(auth.getName());
+
+            this.propertyService.createProperty(
+                    dto,
+                    currentUser,
+                    mainImage,
+                    propertyImages
+            );
+
+            redirect.addFlashAttribute(
+                    "successMsg",
+                    "Thêm bất động sản thành công!"
+            );
+
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errMsg", e.getMessage());
+            redirect.addFlashAttribute(
+                    "errMsg",
+                    e.getMessage()
+            );
         }
+
         return "redirect:/admin/properties";
     }
 
-    @PostMapping("/{id}")
-    public String update(@PathVariable("id") Integer id,
-                          @RequestParam Map<String, String> params,
-                          @RequestParam(value = "file", required = false) MultipartFile file,
-                          Authentication auth,
-                          RedirectAttributes redirect) {
+    @PostMapping(
+            value = "/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public String update(
+            @PathVariable("id") Integer id,
+            @ModelAttribute PropertyRequestDTO dto,
+            @RequestParam(
+                    value = "mainImage",
+                    required = false
+            ) MultipartFile mainImage,
+            @RequestParam(
+                    value = "propertyImages",
+                    required = false
+            ) List<MultipartFile> propertyImages,
+            Authentication auth,
+            RedirectAttributes redirect) {
+
         try {
-            Users currentUser = this.userService.getUserByUsername(auth.getName());
-            this.propertyService.updateProperty(id, toDto(params), currentUser);
-            this.propertyService.addPropertyImage(id, file);
-            redirect.addFlashAttribute("successMsg", "Cập nhật bất động sản #" + id + " thành công!");
+            Users currentUser = this.userService
+                    .getUserByUsername(auth.getName());
+
+            this.propertyService.updateProperty(
+                    id,
+                    dto,
+                    currentUser,
+                    mainImage,
+                    propertyImages
+            );
+
+            redirect.addFlashAttribute(
+                    "successMsg",
+                    "Cập nhật bất động sản #" + id
+                    + " thành công!"
+            );
+
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errMsg", e.getMessage());
+            redirect.addFlashAttribute(
+                    "errMsg",
+                    e.getMessage()
+            );
         }
+
         return "redirect:/admin/properties";
     }
 
@@ -106,7 +161,6 @@ public class AdminPropertyController {
         dto.setDescription(params.get("description"));
         dto.setAddress(params.get("address"));
         dto.setDistrict(params.get("district"));
-        dto.setStatus(params.get("status"));
 
         String price = params.get("price");
         if (price != null && !price.isBlank()) {
@@ -127,5 +181,3 @@ public class AdminPropertyController {
         return dto;
     }
 }
-
-

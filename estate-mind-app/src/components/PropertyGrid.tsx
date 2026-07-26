@@ -24,8 +24,9 @@ export default function PropertyGrid({ data, error }: Props) {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md py-10 text-center">
-        <p className="text-red-600 font-medium mb-1">Không thể tải danh sách bất động sản.</p>
-        <p className="text-sm text-red-500">{error}</p>
+        <p className="text-red-600 font-medium mb-1">
+          Không thể tải danh sách bất động sản.
+        </p>
       </div>
     );
   }
@@ -35,7 +36,9 @@ export default function PropertyGrid({ data, error }: Props) {
   if (items.length === 0) {
     return (
       <div className="bg-white rounded-md border border-dashed border-gray-300 py-16 text-center">
-        <p className="text-gray-500">Không tìm thấy bất động sản nào phù hợp.</p>
+        <p className="text-gray-500">
+          Không tìm thấy bất động sản nào phù hợp.
+        </p>
       </div>
     );
   }
@@ -43,13 +46,21 @@ export default function PropertyGrid({ data, error }: Props) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {items.map((property) => (
-          <PropertyCard key={property.id} property={property} />
+        {items.map((property, index) => (
+          <PropertyCard
+            key={property.id}
+            property={property}
+            priority={index < 4}
+          />
         ))}
       </div>
 
       {data && (
-        <Pagination page={data.page} totalPages={data.totalPages} onPageChange={goToPage} />
+        <Pagination
+          page={data.page}
+          totalPages={data.totalPages}
+          onPageChange={goToPage}
+        />
       )}
     </>
   );

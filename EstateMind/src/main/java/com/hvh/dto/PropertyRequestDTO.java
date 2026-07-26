@@ -1,19 +1,14 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hvh.dto;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 
-/**
- *
- * @author acer
- */
 public class PropertyRequestDTO {
 
     @NotBlank(message = "Tiêu đề không được để trống")
@@ -25,29 +20,38 @@ public class PropertyRequestDTO {
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
-    @Size(max = 255)
-    private String mainImage;
-
     @NotNull(message = "Giá không được để trống")
-    @DecimalMin(value = "0", inclusive = false, message = "Giá phải lớn hơn 0")
+    @DecimalMin(
+            value = "0",
+            inclusive = false,
+            message = "Giá phải lớn hơn 0"
+    )
     private BigDecimal price;
 
+    @DecimalMin(
+            value = "0",
+            inclusive = false,
+            message = "Diện tích phải lớn hơn 0"
+    )
     private BigDecimal area;
 
-    private String status;
-
+    @Size(max = 100, message = "Quận/Huyện tối đa 100 ký tự")
     private String district;
 
+    @Min(value = 0, message = "Số phòng ngủ không được âm")
     private Integer bedrooms;
 
+    @DecimalMin(value = "-90", message = "Vĩ độ không hợp lệ")
+    @DecimalMax(value = "90", message = "Vĩ độ không hợp lệ")
     private BigDecimal latitude;
 
+    @DecimalMin(value = "-180", message = "Kinh độ không hợp lệ")
+    @DecimalMax(value = "180", message = "Kinh độ không hợp lệ")
     private BigDecimal longitude;
 
     @NotNull(message = "Loại bất động sản không được để trống")
     private Integer categoryId;
 
-    // getters/setters
     public String getTitle() {
         return title;
     }
@@ -88,14 +92,6 @@ public class PropertyRequestDTO {
         this.area = area;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public String getDistrict() {
         return district;
     }
@@ -134,13 +130,5 @@ public class PropertyRequestDTO {
 
     public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
-    }
-
-    public String getMainImage() {
-        return mainImage;
-    }
-
-    public void setMainImage(String mainImage) {
-        this.mainImage = mainImage;
     }
 }

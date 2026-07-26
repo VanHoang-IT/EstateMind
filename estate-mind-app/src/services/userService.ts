@@ -23,6 +23,7 @@ export const userService = {
     if (input.phone) formData.set("phone", input.phone);
     if (input.email) formData.set("email", input.email);
     formData.set("avatar", input.avatar); // bắt buộc — backend yêu cầu avatar
+    formData.set("role", input.role); // "CUSTOMER" hoặc "SELLER"
 
     const res = await fetch(`${API_URL}/users`, {
       method: "POST",

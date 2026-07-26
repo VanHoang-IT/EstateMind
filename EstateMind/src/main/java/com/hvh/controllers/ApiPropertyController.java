@@ -25,7 +25,10 @@ import org.springframework.web.multipart.MultipartFile;
  * @author acer
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping(
+        value = "/api",
+        produces = MediaType.APPLICATION_JSON_VALUE
+)
 @CrossOrigin
 public class ApiPropertyController {
 
@@ -36,56 +39,175 @@ public class ApiPropertyController {
     private UserService userService;
 
     @GetMapping("/properties")
-    public ResponseEntity<PageResponseDTO<Property>> list(@RequestParam Map<String, String> params) {
-        return new ResponseEntity<>(this.propertyService.getProperties(params), HttpStatus.OK);
+    public ResponseEntity<PageResponseDTO<Property>> list(
+            @RequestParam Map<String, String> params) {
+
+        return ResponseEntity.ok(
+                this.propertyService.getProperties(params)
+        );
     }
 
-    @GetMapping(
-            value = "/properties/{propertyId}",
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<?> details(@PathVariable(value = "propertyId") int id) {
+    @GetMapping("/properties/{propertyId}")
+    public ResponseEntity<?> details(
+            @PathVariable("propertyId") int id) {
+
         try {
-            return new ResponseEntity<>(
-                    this.propertyService.getPropertyById(id),
-                    HttpStatus.OK
-            );
+            Property property
+                    = this.propertyService.getPropertyById(id);
+
+            return ResponseEntity.ok(property);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "message",
+                            getMessage(e, "Không tìm thấy tin đăng")
+                    ));
+
         } catch (RuntimeException e) {
             e.printStackTrace();
-            return new ResponseEntity<>(
-                    e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Không thể lấy thông tin tin đăng"
+                            )
+                    ));
         }
     }
 
-    @PostMapping("/secure/properties")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> create(@RequestBody PropertyRequestDTO dto, Authentication auth) {
-        try {
-            Users seller = this.userService.getUserByUsername(auth.getName());
-            Property created = this.propertyService.createProperty(dto, seller);
-            return new ResponseEntity<>(created, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PutMapping("/secure/properties/{propertyId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> update(@PathVariable(value = "propertyId") int id,
-            @RequestBody PropertyRequestDTO dto,
+    @PostMapping(
+            value = "/secure/properties",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @PreAuthorize("hasAnyAuthority('ROLE_SELLER','ROLE_ADMIN')")
+    public ResponseEntity<?> create(
+            @RequestPart("property") PropertyRequestDTO dto,
+            @RequestPart("mainImage") MultipartFile mainImage,
+            @RequestPart(
+                    value = "propertyImages",
+                    required = false
+            ) java.util.List<MultipartFile> propertyImages,
             Authentication auth) {
+
         try {
-            Users currentUser = this.userService.getUserByUsername(auth.getName());
-            Property updated = this.propertyService.updateProperty(id, dto, currentUser);
-            return new ResponseEntity<>(updated, HttpStatus.OK);
+            Users seller = this.userService
+                    .getUserByUsername(auth.getName());
+
+            Property created = this.propertyService
+                    .createProperty(
+                            dto,
+                            seller,
+                            mainImage,
+                            propertyImages
+                    );
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(Map.of(
+                            "message", "Đăng tin thành công",
+                            "id", created.getId(),
+                            "title", created.getTitle(),
+                            "mainImage",
+                            created.getMainImage() == null
+                            ? ""
+                            : created.getMainImage()
+                    ));
+
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Dữ liệu tin đăng không hợp lệ"
+                            )
+                    ));
+
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Không thể tạo tin đăng"
+                            )
+                    ));
+        }
+    }
+
+    @PutMapping(
+            value = "/secure/properties/{propertyId}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @PreAuthorize("hasAnyAuthority('ROLE_SELLER','ROLE_ADMIN')")
+    public ResponseEntity<?> update(
+            @PathVariable("propertyId") int id,
+            @RequestPart("property") PropertyRequestDTO dto,
+            @RequestPart(
+                    value = "mainImage",
+                    required = false
+            ) MultipartFile mainImage,
+            @RequestPart(
+                    value = "propertyImages",
+                    required = false
+            ) java.util.List<MultipartFile> propertyImages,
+            Authentication auth) {
+
+        try {
+            Users currentUser = this.userService
+                    .getUserByUsername(auth.getName());
+
+            Property updated = this.propertyService
+                    .updateProperty(
+                            id,
+                            dto,
+                            currentUser,
+                            mainImage,
+                            propertyImages
+                    );
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "message", "Cập nhật tin thành công",
+                            "id", updated.getId(),
+                            "title", updated.getTitle(),
+                            "mainImage",
+                            updated.getMainImage() == null
+                            ? ""
+                            : updated.getMainImage()
+                    )
+            );
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Dữ liệu cập nhật không hợp lệ"
+                            )
+                    ));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Bạn không có quyền cập nhật tin này"
+                            )
+                    ));
         }
     }
 
@@ -93,28 +215,99 @@ public class ApiPropertyController {
             value = "/secure/properties/{propertyId}/images",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> uploadImage(@PathVariable(value = "propertyId") int id,
+    @PreAuthorize("hasAnyAuthority('ROLE_SELLER','ROLE_ADMIN')")
+    public ResponseEntity<?> uploadImage(
+            @PathVariable("propertyId") int id,
             @RequestParam("file") MultipartFile file) {
+
         try {
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity
+                        .badRequest()
+                        .body(Map.of(
+                                "message",
+                                "Vui lòng chọn ảnh"
+                        ));
+            }
+
             this.propertyService.addPropertyImage(id, file);
-            return new ResponseEntity<>(HttpStatus.CREATED);
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(Map.of(
+                            "message",
+                            "Tải ảnh lên thành công",
+                            "propertyId",
+                            id
+                    ));
+
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of(
+                            "message",
+                            getMessage(e, "Ảnh không hợp lệ")
+                    ));
+
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Không thể tải ảnh lên"
+                            )
+                    ));
         }
     }
 
     @DeleteMapping("/secure/properties/{propertyId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> delete(@PathVariable(value = "propertyId") int id, Authentication auth) {
+    @PreAuthorize("hasAnyAuthority('ROLE_SELLER','ROLE_ADMIN')")
+    public ResponseEntity<?> delete(
+            @PathVariable("propertyId") int id,
+            Authentication auth) {
+
         try {
-            Users currentUser = this.userService.getUserByUsername(auth.getName());
-            this.propertyService.deleteProperty(id, currentUser);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            Users currentUser
+                    = this.userService.getUserByUsername(
+                            auth.getName()
+                    );
+
+            this.propertyService.deleteProperty(
+                    id,
+                    currentUser
+            );
+
+            return ResponseEntity
+                    .noContent()
+                    .build();
+
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "message",
+                            getMessage(
+                                    e,
+                                    "Bạn không có quyền xóa tin này"
+                            )
+                    ));
         }
+    }
+
+    private String getMessage(
+            Exception exception,
+            String defaultMessage) {
+
+        String message = exception.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return defaultMessage;
+        }
+
+        return message;
     }
 }

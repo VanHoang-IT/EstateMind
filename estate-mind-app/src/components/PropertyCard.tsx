@@ -10,6 +10,7 @@ import { favoriteService } from "@/services/favoriteService";
 
 interface PropertyCardProps {
   property: Property;
+  priority?: boolean;
 }
 
 const FALLBACK_IMAGE =
@@ -35,7 +36,10 @@ function formatPrice(price?: number): string {
   return `${price.toLocaleString("vi-VN")} đồng`;
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+export default function PropertyCard({
+  property,
+  priority = false,
+}: PropertyCardProps) {
   const { user } = useAuth();
 
   const [favorited, setFavorited] = useState(false);
@@ -122,6 +126,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             alt={property.title || "Ảnh bất động sản"}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
+            priority={priority}
             className="
               object-cover transition-transform duration-300
               group-hover:scale-105

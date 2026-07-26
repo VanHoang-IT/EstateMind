@@ -1,14 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
+import PropertyTypeMenu from "@/components/PropertyTypeMenu";
+
+import {
+  propertyTypeService,
+  type PropertyType,
+} from "@/services/propertyTypeService";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+
+  const parsedCategoryId = Number(searchParams.get("categoryId"));
+  const selectedCategoryId =
+    Number.isInteger(parsedCategoryId) && parsedCategoryId > 0
+      ? parsedCategoryId
+      : undefined;
+
+  const canPostProperty =
+    user?.userRole === "ROLE_SELLER" || user?.userRole === "ROLE_ADMIN";
+
+  useEffect(() => {
+    let ignore = false;
+
+    propertyTypeService
+      .getPropertyTypes()
+      .then((result) => {
+        if (!ignore) {
+          setPropertyTypes(result);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setPropertyTypes([]);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   function handleLogout() {
     logout();
@@ -69,16 +109,13 @@ export default function Header() {
               dark:text-slate-300
             "
           >
-            <Link
-              href="/"
-              className="
-                transition-colors
-                hover:text-red-500
-                dark:hover:text-red-400
-              "
-            >
-              Nhà đất bán
-            </Link>
+            {propertyTypes.map((propertyType) => (
+              <PropertyTypeMenu
+                key={propertyType.id}
+                propertyType={propertyType}
+                selectedCategoryId={selectedCategoryId}
+              />
+            ))}
 
             {user && (
               <Link
@@ -145,21 +182,23 @@ export default function Header() {
             </Link>
           )}
 
-          <Link
-            href="/properties/new"
-            className="
-              rounded-md bg-red-500
-              px-3 py-2
-              font-semibold text-white
-              transition-colors
-              hover:bg-red-600
-              sm:px-4
-              dark:bg-red-600
-              dark:hover:bg-red-500
-            "
-          >
-            Đăng tin
-          </Link>
+          {canPostProperty && (
+            <Link
+              href="/properties/new"
+              className="
+                rounded-md bg-red-500
+                px-3 py-2
+                font-semibold text-white
+                transition-colors
+                hover:bg-red-600
+                sm:px-4
+                dark:bg-red-600
+                dark:hover:bg-red-500
+              "
+            >
+              Đăng tin
+            </Link>
+          )}
         </div>
       </div>
     </header>

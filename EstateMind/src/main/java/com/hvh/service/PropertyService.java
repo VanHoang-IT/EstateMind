@@ -10,16 +10,59 @@ import com.hvh.pojo.Property;
 import com.hvh.pojo.Users;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
+import java.util.List;
+
 /**
  *
  * @author acer
  */
 public interface PropertyService {
 
-    PageResponseDTO<Property> getProperties(Map<String, String> params);
+    PageResponseDTO<Property> getProperties(
+            Map<String, String> params
+    );
+
     Property getPropertyById(int id);
-    Property createProperty(PropertyRequestDTO dto, Users seller);
-    Property updateProperty(int id, PropertyRequestDTO dto, Users currentUser);
-    void deleteProperty(int id, Users currentUser);
-    void addPropertyImage(int propertyId, MultipartFile file);
+
+    Property createProperty(
+            PropertyRequestDTO dto,
+            Users seller
+    );
+
+    Property createProperty(
+            PropertyRequestDTO dto,
+            Users seller,
+            MultipartFile mainImage,
+            List<MultipartFile> propertyImages
+    );
+
+    Property updateProperty(
+            int id,
+            PropertyRequestDTO dto,
+            Users currentUser
+    );
+
+    Property updateProperty(
+            int id,
+            PropertyRequestDTO dto,
+            Users currentUser,
+            MultipartFile mainImage,
+            List<MultipartFile> propertyImages
+    );
+
+    void deleteProperty(
+            int id,
+            Users currentUser
+    );
+
+    void addPropertyImage(
+            int propertyId,
+            MultipartFile file
+    );
+
+    void addPropertyImages(
+            int propertyId,
+            List<MultipartFile> files,
+            Users currentUser
+    );
 }

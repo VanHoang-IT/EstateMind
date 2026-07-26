@@ -1,21 +1,33 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+
 import { Review } from "@/types/review";
 import { reviewService } from "@/services/reviewService";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface PropertyReviewsProps {
+  propertyId: number;
+}
+
 function Stars({ rating }: { rating: number }) {
+  const safeRating = Math.min(5, Math.max(0, Math.round(rating)));
+
   return (
-    <span className="text-yellow-500 text-sm">
-      {"★".repeat(rating)}
-      <span className="text-gray-300">{"★".repeat(5 - rating)}</span>
+    <span
+      className="text-sm text-yellow-500"
+      aria-label={`${safeRating} trên 5 sao`}
+    >
+      {"★".repeat(safeRating)}
+      <span className="text-gray-300">{"★".repeat(5 - safeRating)}</span>
     </span>
   );
 }
 
-export default function PropertyReviews({ propertyId }: { propertyId: number }) {
+export default function PropertyReviews({ propertyId }: PropertyReviewsProps) {
   const { user } = useAuth();
+
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,33 +37,82 @@ export default function PropertyReviews({ propertyId }: { propertyId: number }) 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  function load() {
-    setLoading(true);
+  useEffect(() => {
+    let ignore = false;
+
     reviewService
       .getReviewsByProperty(propertyId)
-      .then(setReviews)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }
+      .then((result) => {
+        if (ignore) {
+          return;
+        }
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        setReviews(result);
+        setError(null);
+      })
+      .catch(() => {
+        if (ignore) {
+          return;
+        }
+
+        setReviews([]);
+        setError("Không thể tải đánh giá. Vui lòng thử lại sau.");
+      })
+      .finally(() => {
+        if (ignore) {
+          return;
+        }
+
+        setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [propertyId]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!content.trim()) return;
+  async function reloadReviews() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await reviewService.getReviewsByProperty(propertyId);
+
+      setReviews(result);
+    } catch {
+      setReviews([]);
+      setError("Không thể tải đánh giá. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedContent = content.trim();
+
+    if (!trimmedContent) {
+      setFormError("Vui lòng nhập nội dung đánh giá.");
+      return;
+    }
 
     setSubmitting(true);
     setFormError(null);
+
     try {
-      await reviewService.createReview({ content, rating, propertyId });
+      await reviewService.createReview({
+        content: trimmedContent,
+        rating,
+        propertyId,
+      });
+
       setContent("");
       setRating(5);
-      load();
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Gửi đánh giá thất bại");
+
+      await reloadReviews();
+    } catch {
+      setFormError("Không thể gửi đánh giá. Vui lòng thử lại sau.");
     } finally {
       setSubmitting(false);
     }
@@ -59,68 +120,113 @@ export default function PropertyReviews({ propertyId }: { propertyId: number }) 
 
   return (
     <div className="mt-8">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Đánh giá ({reviews.length})</h2>
+      <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-slate-100">
+        Đánh giá ({reviews.length})
+      </h2>
 
       {user ? (
-        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-md p-4 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm text-gray-600">Đánh giá:</span>
-            {[1, 2, 3, 4, 5].map((n) => (
+        <form
+          onSubmit={handleSubmit}
+          className="mb-6 rounded-md border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+        >
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-slate-300">
+              Đánh giá:
+            </span>
+
+            {[1, 2, 3, 4, 5].map((number) => (
               <button
                 type="button"
-                key={n}
-                onClick={() => setRating(n)}
-                className={`text-xl ${n <= rating ? "text-yellow-500" : "text-gray-300"}`}
+                key={number}
+                onClick={() => setRating(number)}
+                aria-label={`Chọn ${number} sao`}
+                aria-pressed={rating === number}
+                className={`text-xl ${
+                  number <= rating ? "text-yellow-500" : "text-gray-300"
+                }`}
               >
                 ★
               </button>
             ))}
           </div>
+
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(event) => {
+              setContent(event.target.value);
+
+              if (formError) {
+                setFormError(null);
+              }
+            }}
             rows={3}
+            maxLength={1000}
             placeholder="Chia sẻ trải nghiệm của bạn về bất động sản này..."
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500 mb-3"
+            className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
-          {formError && <p className="text-sm text-red-600 mb-2">{formError}</p>}
+
+          {formError && (
+            <p className="mb-2 text-sm text-red-600 dark:text-red-400">
+              {formError}
+            </p>
+          )}
+
           <button
             type="submit"
-            disabled={submitting}
-            className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-md disabled:opacity-50"
+            disabled={submitting || !content.trim()}
+            className="rounded-md bg-red-500 px-5 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Đang gửi..." : "Gửi đánh giá"}
           </button>
         </form>
       ) : (
-        <p className="text-sm text-gray-500 mb-6">
-          <a href="/login" className="text-red-500 font-medium hover:underline">
+        <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">
+          <Link
+            href="/login"
+            className="font-medium text-red-500 hover:underline"
+          >
             Đăng nhập
-          </a>{" "}
+          </Link>{" "}
           để viết đánh giá.
         </p>
       )}
 
       {loading && <p className="text-sm text-gray-400">Đang tải đánh giá...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {!loading && !error && reviews.length === 0 && (
-        <p className="text-sm text-gray-400">Chưa có đánh giá nào cho bất động sản này.</p>
+      {!loading && error && (
+        <p className="text-sm text-gray-500 dark:text-slate-400">{error}</p>
       )}
 
-      <div className="space-y-4">
-        {reviews.map((r) => (
-          <div key={r.id} className="border-b border-gray-100 pb-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-medium text-sm text-gray-800">
-                {r.userId?.firstName || r.userId?.username || "Người dùng"}
-              </span>
-              <Stars rating={r.rating} />
+      {!loading && !error && reviews.length === 0 && (
+        <p className="text-sm text-gray-400">
+          Chưa có đánh giá nào cho bất động sản này.
+        </p>
+      )}
+
+      {!loading && !error && (
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <div
+              key={review.id}
+              className="border-b border-gray-100 pb-4 dark:border-slate-800"
+            >
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-gray-800 dark:text-slate-200">
+                  {review.userId?.firstName ||
+                    review.userId?.username ||
+                    "Người dùng"}
+                </span>
+
+                <Stars rating={review.rating} />
+              </div>
+
+              <p className="whitespace-pre-line break-words text-sm text-gray-600 dark:text-slate-300">
+                {review.content}
+              </p>
             </div>
-            <p className="text-sm text-gray-600">{r.content}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

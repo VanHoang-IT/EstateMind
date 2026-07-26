@@ -17,6 +17,7 @@ export interface RegisterInput {
   phone?: string;
   email?: string;
   avatar: File; // backend bắt buộc phải có avatar khi đăng ký (xem ApiUserController)
+  role: "CUSTOMER" | "SELLER"; // backend tự tạo customer_profile / seller_profile tương ứng
 }
 
 export interface LoginInput {

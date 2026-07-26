@@ -1,1 +1,13 @@
 /EstateMind/target/
+
+pipeline/.venv/
+pipeline/venv/
+pipeline/__pycache__/
+pipeline/**/*.pyc
+
+pipeline/.env
+
+pipeline/chroma_db/
+
+pipeline/data/*.csv
+

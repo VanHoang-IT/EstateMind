@@ -17,6 +17,7 @@ export default function RegisterPage() {
     phone: "",
     email: "",
   });
+  const [role, setRole] = useState<"CUSTOMER" | "SELLER">("CUSTOMER");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register({ ...form, avatar });
+      await register({ ...form, avatar, role });
       router.push("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Đăng ký thất bại");
@@ -67,6 +68,34 @@ export default function RegisterPage() {
                 onChange={(e) => update("firstName", e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Bạn đăng ký với vai trò</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setRole("CUSTOMER")}
+                className={`border rounded-md py-2 text-sm font-medium transition-colors ${
+                  role === "CUSTOMER"
+                    ? "border-red-500 bg-red-50 text-red-600"
+                    : "border-gray-300 text-gray-600 hover:border-gray-400"
+                }`}
+              >
+                Người mua/thuê
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("SELLER")}
+                className={`border rounded-md py-2 text-sm font-medium transition-colors ${
+                  role === "SELLER"
+                    ? "border-red-500 bg-red-50 text-red-600"
+                    : "border-gray-300 text-gray-600 hover:border-gray-400"
+                }`}
+              >
+                Người bán/môi giới
+              </button>
             </div>
           </div>
 
