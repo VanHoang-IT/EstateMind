@@ -5,69 +5,221 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
+type LoginErrors = {
+  username?: string;
+  password?: string;
+};
+
+function getReadableError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return "Đăng nhập thất bại";
+  }
+
+  const rawMessage = error.message?.trim();
+
+  if (!rawMessage) {
+    return "Đăng nhập thất bại";
+  }
+
+  if (rawMessage.includes("<!doctype html") || rawMessage.includes("<html")) {
+    const documentHtml = new DOMParser().parseFromString(
+      rawMessage,
+      "text/html",
+    );
+
+    const paragraphs = Array.from(documentHtml.querySelectorAll("p"));
+
+    const messageParagraph = paragraphs.find(
+      (paragraph) =>
+        paragraph.querySelector("b")?.textContent?.trim() === "Message",
+    );
+
+    const message = messageParagraph?.textContent
+      ?.replace(/^Message\s*/i, "")
+      .trim();
+
+    return message || "Đăng nhập thất bại";
+  }
+
+  return rawMessage;
+}
+
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<LoginErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function validateForm(): boolean {
+    const nextErrors: LoginErrors = {};
+
+    if (!username.trim()) {
+      nextErrors.username = "Vui lòng nhập tên đăng nhập";
+    }
+
+    if (!password.trim()) {
+      nextErrors.password = "Vui lòng nhập mật khẩu";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
+
     try {
-      await login({ username, password });
+      await login({
+        username: username.trim(),
+        password,
+      });
+
       router.push("/");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Đăng nhập thất bại");
+    } catch (caughtError) {
+      const message = getReadableError(caughtError);
+      const normalized = message.toLowerCase();
+
+      if (
+        normalized.includes("tên đăng nhập") ||
+        normalized.includes("username")
+      ) {
+        setErrors((current) => ({
+          ...current,
+          username: message,
+        }));
+      } else if (
+        normalized.includes("mật khẩu") ||
+        normalized.includes("password")
+      ) {
+        setErrors((current) => ({
+          ...current,
+          password: message,
+        }));
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-md shadow-sm p-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-6 text-center">Đăng nhập</h1>
+  const inputClass = (hasError: boolean) =>
+    `w-full rounded-md border px-3 py-2 text-sm text-gray-900
+     focus:outline-none ${
+       hasError
+         ? "border-red-500 focus:border-red-500"
+         : "border-gray-300 focus:border-red-500"
+     }`;
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center px-4">
+      <div className="w-full max-w-sm rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <h1 className="mb-6 text-center text-xl font-bold text-gray-900">
+          Đăng nhập
+        </h1>
+
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Tên đăng nhập</label>
+            <label
+              htmlFor="username"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Tên đăng nhập
+            </label>
+
             <input
+              id="username"
+              name="username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              onChange={(event) => {
+                setUsername(event.target.value);
+
+                setErrors((current) => ({
+                  ...current,
+                  username: undefined,
+                }));
+
+                setError(null);
+              }}
+              autoComplete="username"
+              aria-invalid={Boolean(errors.username)}
+              className={inputClass(Boolean(errors.username))}
             />
+
+            {errors.username && (
+              <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+            )}
           </div>
+
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Mật khẩu</label>
+            <label
+              htmlFor="password"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Mật khẩu
+            </label>
+
             <input
+              id="password"
+              name="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              onChange={(event) => {
+                setPassword(event.target.value);
+
+                setErrors((current) => ({
+                  ...current,
+                  password: undefined,
+                }));
+
+                setError(null);
+              }}
+              autoComplete="current-password"
+              aria-invalid={Boolean(errors.password)}
+              className={inputClass(Boolean(errors.password))}
             />
+
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+            )}
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <div
+              role="alert"
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+            >
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-md transition-colors disabled:opacity-50"
+            className="w-full rounded-md bg-red-500 py-2.5 font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-500 text-center mt-4">
+        <p className="mt-4 text-center text-sm text-gray-500">
           Chưa có tài khoản?{" "}
-          <Link href="/register" className="text-red-500 font-medium hover:underline">
+          <Link
+            href="/register"
+            className="font-medium text-red-500 hover:underline"
+          >
             Đăng ký
           </Link>
         </p>

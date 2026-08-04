@@ -4,25 +4,31 @@
  */
 package com.hvh.controllers;
 
-import com.hvh.pojo.Users;
+import com.hvh.dto.LoginRequestDTO;
+import com.hvh.dto.LoginResponseDTO;
+import com.hvh.dto.RegisterRequestDTO;
+import com.hvh.dto.UpdateProfileDTO;
+import com.hvh.dto.UpdateVerificationProfileDTO;
+import com.hvh.dto.UserProfileResponseDTO;
+import com.hvh.dto.VerificationProfileResponseDTO;
 import com.hvh.service.UserService;
-import com.hvh.utils.JwtUtils;
+import jakarta.validation.Valid;
 import java.security.Principal;
-import java.util.Collections;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 
 /**
  *
@@ -36,41 +42,114 @@ public class ApiUserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping(path = "/users",
+    @PostMapping(
+            value = "/users",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Users> create(@RequestParam Map<String, String> params,
-            @RequestParam(value = "avatar") MultipartFile avatar) {
-        Users u = this.userService.addUser(params, avatar);
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<UserProfileResponseDTO> register(
+            @Valid @ModelAttribute RegisterRequestDTO request,
+            @RequestParam(
+                    value = "avatar",
+                    required = false
+            ) MultipartFile avatar) {
 
-        return new ResponseEntity<>(u, HttpStatus.CREATED);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(
+                        this.userService.register(
+                                request,
+                                avatar
+                        )
+                );
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Users u) {
+    @PostMapping(
+            value = "/login",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<LoginResponseDTO> login(
+            @Valid @RequestBody LoginRequestDTO request) {
 
-        if (this.userService.authenticate(u.getUsername(), u.getPassword())) {
-            try {
-                String token = JwtUtils.generateToken(u.getUsername());
-                return ResponseEntity.ok().body(Collections.singletonMap("token", token));
-            } catch (Exception e) {
-                return ResponseEntity.status(500).body("Lỗi khi tạo JWT");
-            }
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai thông tin đăng nhập");
+        return ResponseEntity.ok(
+                this.userService.login(request)
+        );
     }
 
-    @RequestMapping(
+    @GetMapping(
             value = "/secure/profile",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @ResponseBody
-    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Users> getProfile(Principal principal) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserProfileResponseDTO> getProfile(
+            Principal principal) {
 
-        return new ResponseEntity<>(
-                this.userService.getUserByUsername(
-                        principal.getName()),
-                HttpStatus.OK);
+        return ResponseEntity.ok(
+                this.userService.getUserProfile(
+                        principal.getName()
+                )
+        );
+    }
+
+    @PutMapping(
+            value = "/secure/profile",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserProfileResponseDTO> updateProfile(
+            @Valid @ModelAttribute UpdateProfileDTO request,
+            @RequestParam(
+                    value = "avatar",
+                    required = false
+            ) MultipartFile avatar,
+            Principal principal) {
+
+        return ResponseEntity.ok(
+                this.userService.updateProfile(
+                        principal.getName(),
+                        request,
+                        avatar
+                )
+        );
+    }
+
+    @GetMapping(
+            value = "/secure/verification-profile",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<VerificationProfileResponseDTO<?>>
+            getVerificationProfile(
+                    Principal principal) {
+
+        return ResponseEntity.ok(
+                this.userService
+                        .getVerificationProfile(
+                                principal.getName()
+                        )
+        );
+    }
+
+    @PutMapping(
+            value = "/secure/verification-profile",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateVerificationProfile(
+            @RequestBody UpdateVerificationProfileDTO request,
+            Principal principal) {
+        try {
+            return ResponseEntity.ok(
+                    this.userService.updateVerificationProfile(
+                            principal.getName(),
+                            request
+                    )
+            );
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

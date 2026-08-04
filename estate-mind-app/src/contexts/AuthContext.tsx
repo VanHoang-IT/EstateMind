@@ -17,34 +17,27 @@ interface AuthContextValue {
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// LƯU Ý: token đang lưu ở localStorage cho đơn giản. Cách an toàn hơn (chống
-// XSS đọc trộm token) là dùng cookie httpOnly — nhưng backend hiện trả JWT
-// trong body JSON của /api/login (không set Set-Cookie), nên muốn dùng
-// httpOnly cookie thật sự cần thêm 1 Next.js Route Handler làm proxy để tự
-// set cookie phía server. Để đơn giản trong bản này, dùng localStorage trước;
-// có thể nâng cấp sau nếu cần bảo mật cao hơn.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = getToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    userService
-      .getProfile()
-      .then(setUser)
-      .catch(() => {
-        clearToken();
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
+    const load = token
+      ? userService
+          .getProfile()
+          .then(setUser)
+          .catch(() => {
+            clearToken();
+            setUser(null);
+          })
+      : Promise.resolve();
+    load.finally(() => setLoading(false));
   }, []);
 
   async function login(input: LoginInput) {
@@ -56,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function register(input: RegisterInput) {
     await userService.register(input);
-    // Đăng ký xong tự đăng nhập luôn cho tiện
     await login({ username: input.username, password: input.password });
   }
 
@@ -65,8 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function refreshUser() {
+    const profile = await userService.getProfile();
+    setUser(profile);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

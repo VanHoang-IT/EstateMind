@@ -64,6 +64,7 @@ export default async function Home({ searchParams }: Props) {
       maxPrice: currentMaxPrice,
       bedrooms: currentBedrooms,
       categoryId: currentCategoryId,
+      status: "AVAILABLE",
     });
   } catch {
     propertyError = "Dữ liệu hiện không khả dụng. Vui lòng thử lại sau.";

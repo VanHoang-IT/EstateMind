@@ -6,41 +6,30 @@
 </head>
 <body>
     <div th:replace="base :: header"></div>
-
     <section class="container mt-4 mb-5">
-
         <h2 class="text-center text-primary mb-4">
             QUẢN LÝ BẤT ĐỘNG SẢN
         </h2>
-
         <!-- Alert -->
         <div th:if="${errMsg}" class="alert alert-danger alert-dismissible fade show">
             <span th:text="${errMsg}"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-
         <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
             <span th:text="${successMsg}"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-
         <div class="row g-4">
-
             <!-- FORM -->
             <div class="col-lg-4">
-
                 <div class="card shadow">
-
                     <div class="card-header bg-primary text-white fw-bold"
                          th:text="${property.id != null ? 'Cập nhật BĐS #' + property.id : 'Thêm bất động sản'}">
                     </div>
-
                     <div class="card-body">
-
                         <form method="post"
                               enctype="multipart/form-data"
                               th:action="${property.id} != null ? @{/admin/properties/{id}(id=${property.id})} : @{/admin/properties}">
-
                             <!-- Tiêu đề -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Tiêu đề</label>
@@ -48,7 +37,6 @@
                                        th:value="${property.title}"
                                        placeholder="Nhập tiêu đề..." required>
                             </div>
-
                             <!-- Danh mục -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Danh mục</label>
@@ -61,98 +49,78 @@
                                     </option>
                                 </select>
                             </div>
-
                             <!-- Giá -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Giá</label>
                                 <input class="form-control" type="number" step="0.01" name="price"
                                        th:value="${property.price}" required>
                             </div>
-
                             <!-- Diện tích -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Diện tích (m²)</label>
                                 <input class="form-control" type="number" step="0.01" name="area"
                                        th:value="${property.area}">
                             </div>
-
                             <!-- Địa chỉ -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Địa chỉ</label>
                                 <input class="form-control" name="address"
                                        th:value="${property.address}" required>
                             </div>
-
                             <!-- Quận -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Quận/Huyện</label>
                                 <input class="form-control" name="district"
                                        th:value="${property.district}">
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Phòng ngủ</label>
                                 <input class="form-control" type="number" name="bedrooms"
                                        th:value="${property.bedrooms}">
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Trạng thái</label>
                                 <select class="form-select" name="status">
+                                    <option value="PENDING" th:selected="${property.status == 'PENDING'}">Chờ duyệt</option>
                                     <option value="AVAILABLE" th:selected="${property.status == 'AVAILABLE'}">Đang bán</option>
                                     <option value="RENT" th:selected="${property.status == 'RENT'}">Cho thuê</option>
                                     <option value="SOLD" th:selected="${property.status == 'SOLD'}">Đã bán</option>
                                 </select>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Mô tả</label>
                                 <textarea rows="4" class="form-control"
                                           name="description" th:text="${property.description}"></textarea>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Ảnh (tuỳ chọn)</label>
                                 <input class="form-control" type="file" name="file" accept="image/*">
                             </div>
-
                             <div class="d-grid mt-4">
                                 <button class="btn btn-success" type="submit"
                                         th:text="${property.id != null ? 'Cập nhật' : 'Thêm mới'}">
                                 </button>
                             </div>
-
                             <div class="d-grid mt-2" th:if="${property.id != null}">
                                 <a class="btn btn-outline-secondary" th:href="@{/admin/properties}">Huỷ / Thêm mới khác</a>
                             </div>
-
                         </form>
-
                     </div>
-
                 </div>
-
             </div>
-
             <!-- DANH SÁCH -->
             <div class="col-lg-8">
-
                 <div class="card shadow">
-
                     <div class="card-header bg-dark text-white">
                         Danh sách bất động sản
                     </div>
-
                     <div class="card-body">
-
                         <!-- Tìm kiếm -->
                         <form method="get" th:action="@{/admin/properties}" class="row g-3 mb-3">
-
                             <div class="col-md-4">
                                 <input type="text" class="form-control" name="search"
                                        th:value="${param.search}" placeholder="Nhập tiêu đề...">
                             </div>
-
                             <div class="col-md-3">
                                 <select class="form-select" name="categoryId">
                                     <option value="">Tất cả danh mục</option>
@@ -163,15 +131,20 @@
                                     </option>
                                 </select>
                             </div>
-
+                            <div class="col-md-3">
+                                <select class="form-select" name="status">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="PENDING" th:selected="${param.status == 'PENDING'}">Chờ duyệt</option>
+                                    <option value="AVAILABLE" th:selected="${param.status == 'AVAILABLE'}">Đang bán</option>
+                                    <option value="RENT" th:selected="${param.status == 'RENT'}">Cho thuê</option>
+                                    <option value="SOLD" th:selected="${param.status == 'SOLD'}">Đã bán</option>
+                                </select>
+                            </div>
                             <div class="col-md-2">
                                 <button class="btn btn-primary w-100">Tìm kiếm</button>
                             </div>
-
                         </form>
-
                         <table class="table table-bordered table-hover align-middle">
-
                             <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
@@ -184,7 +157,6 @@
                                     <th width="170"></th>
                                 </tr>
                             </thead>
-
                             <tbody>
                                 <tr th:each="p : ${properties}">
                                     <td th:text="${p.id}"></td>
@@ -194,6 +166,7 @@
                                     <td th:text="${p.area} + ' m²'"></td>
                                     <td th:text="${p.address}"></td>
                                     <td>
+                                        <span class="badge bg-info text-dark" th:if="${p.status == 'PENDING'}">Chờ duyệt</span>
                                         <span class="badge bg-success" th:if="${p.status == 'AVAILABLE'}">Đang bán</span>
                                         <span class="badge bg-warning text-dark" th:if="${p.status == 'RENT'}">Cho thuê</span>
                                         <span class="badge bg-secondary" th:if="${p.status == 'SOLD'}">Đã bán</span>
@@ -210,16 +183,13 @@
                                         </form>
                                     </td>
                                 </tr>
-
                                 <tr th:if="${#lists.isEmpty(properties)}">
                                     <td colspan="8" class="text-center text-muted">
                                         Chưa có bất động sản nào.
                                     </td>
                                 </tr>
                             </tbody>
-
                         </table>
-
                     </div>
                 </div>
             </div>

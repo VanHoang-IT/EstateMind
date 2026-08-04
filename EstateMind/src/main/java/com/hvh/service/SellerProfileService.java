@@ -13,4 +13,5 @@ import com.hvh.pojo.Users;
 public interface SellerProfileService {
     SellerProfile createProfileForUser(Users user);
     SellerProfile getByUserId(int userId);
+    SellerProfile updateProfile(SellerProfile profile);
 }

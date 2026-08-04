@@ -13,5 +13,6 @@ import com.hvh.pojo.Users;
 public interface CustomerProfileService {
     CustomerProfile createProfileForUser(Users user);
     CustomerProfile getByUserId(int userId);
+    CustomerProfile updateProfile(CustomerProfile profile);
 }
 

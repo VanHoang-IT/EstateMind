@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hvh.service.impl;
 
 import com.cloudinary.Cloudinary;
@@ -27,10 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- *
- * @author acer
- */
 @Service
 public class PropertyServiceImpl implements PropertyService {
 
@@ -180,7 +172,7 @@ public class PropertyServiceImpl implements PropertyService {
         return property;
     }
 
-    @Override
+     @Override
     @Transactional
     public Property updateProperty(
             int id,
@@ -197,9 +189,21 @@ public class PropertyServiceImpl implements PropertyService {
                 currentUser
         );
 
+        boolean isAdmin = isAdminRole(currentUser.getUserRole());
+
+        if (!isAdmin && !"PENDING".equalsIgnoreCase(property.getStatus())) {
+            throw new IllegalArgumentException(
+                    "Tin đã được duyệt, không thể chỉnh sửa"
+            );
+        }
+
         mapDtoToEntity(dto, property);
 
-        
+        if (isAdmin
+                && dto.getStatus() != null
+                && !dto.getStatus().isBlank()) {
+            property.setStatus(dto.getStatus().trim().toUpperCase());
+        }
 
         property.setUpdatedAt(new Date());
 

@@ -41,4 +41,10 @@ public class SellerProfileRepositoryImpl implements SellerProfileRepository {
 
         return query.getResultStream().findFirst().orElse(null);
     }
+    
+    @Override
+    public SellerProfile updateProfile(SellerProfile profile) {
+        Session session = this.factory.getObject().getCurrentSession();
+        return session.merge(profile);
+    }
 }

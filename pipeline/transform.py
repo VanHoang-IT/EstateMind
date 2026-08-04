@@ -1,36 +1,46 @@
 import pandas as pd
+import re as _re
+from datetime import timedelta
+
+
+def _parse_post_date(value, crawl_value):
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return pd.NaT
+    s = str(value).strip().lower()
+    base = pd.to_datetime(crawl_value, errors="coerce")
+    if "hôm nay" in s:
+        return base.normalize() if pd.notna(base) else pd.NaT
+    if "hôm qua" in s:
+        return (base - timedelta(days=1)).normalize() if pd.notna(base) else pd.NaT
+    m = _re.search(r"(\d+)\s*ngày trước", s)
+    if m and pd.notna(base):
+        return (base - timedelta(days=int(m.group(1)))).normalize()
+    return pd.to_datetime(s, format="%d/%m/%Y", errors="coerce")
 
 
 def transform(df):
-    # 1. Khởi tạo DataFrame mang sẵn số dòng của df gốc
     result = pd.DataFrame(index=df.index)
 
-    # Điền giá trị mặc định cho khóa ngoại
     result["seller_id"] = 1
     result["category_id"] = 1
 
     result["title"] = df["title"]
     result["description"] = df["description"]
 
-    # Lưu lại URL
     result["url"] = df.get("url", pd.Series(dtype=str))
 
-    # Nguồn crawl — hiện tại chỉ crawl từ batdongsan.com.vn,
-    # set tường minh ở đây để khi có thêm crawler nguồn khác
-    # (vd: chotot.com) chỉ cần đổi giá trị này cho đúng nguồn.
+    # Nguồn crawl — hiện tại chỉ crawl từ batdongsan.com.vn
     result["url_crawl"] = "batdongsan.com.vn"
 
+    # Ảnh đại diện lấy từ card trang list (hoặc fallback ảnh đầu slide)
+    result["main_image"] = df.get("main_image", pd.Series(dtype=str))
+
     # ==========================================
-    # 2. XỬ LÝ ĐỊA CHỈ & QUẬN (CHUẨN HÓA THEO DB)
+    # 2. XỬ LÝ ĐỊA CHỈ & QUẬN
     # ==========================================
     addr = df.get("address", pd.Series(dtype=str)).fillna("")
     dist = df.get("district", pd.Series(dtype=str)).fillna("")
 
-    # QUAN TRỌNG: sau đợt sáp nhập hành chính, batdongsan.com.vn hiển thị
-    # cả address-line-1 (addr) VÀ address-line-2 (dist) đều kèm tên
-    # phường/thành phố mới -> nếu nối thẳng addr + dist sẽ bị LẶP đoạn
-    # "(Phường X, Hồ Chí Minh mới)" 2 lần. Chỉ nối dist vào address nếu
-    # dist CHƯA xuất hiện sẵn trong addr, tránh trùng lặp.
     def _merge_address(a: str, d: str) -> str:
         a = a.strip()
         d = d.strip()
@@ -44,8 +54,6 @@ def transform(df):
     )
 
     result["address"] = combined_address.replace("", "Hồ Chí Minh")
-
-    # Tách riêng cột District truyền vào DB
     result["district"] = dist.replace("", "Hồ Chí Minh")
 
     # ==========================================
@@ -65,56 +73,35 @@ def transform(df):
     else:
         result["bedrooms"] = None
 
-    # ĐÃ XÓA BATHROOMS VÀ FLOORS VÌ DB KHÔNG CÓ!
     result["status"] = "AVAILABLE"
 
     # ==========================================
-    # 3.5 CÁC CỘT TIỆN ÍCH (has_garden/garage/pool/aircon)
-    # ==========================================
-    # QUAN TRỌNG: crawler hiện KHÔNG thu thập được thông tin này.
-    # Trước đây các cột này bị bỏ trống khi insert -> DB tự áp default
-    # SAI là `true` cho mọi property, khiến dữ liệu nói dối là "có đủ
-    # tiện ích" dù không biết thật hay không.
-    #
-    # Explicitly set = None (NULL) để thể hiện đúng "chưa rõ", thay vì
-    # để trống cho DB tự điền default. Migration đã DROP DEFAULT của
-    # các cột này ở DB, nhưng set tường minh ở đây để chắc chắn dù
-    # default DB có bị đổi lại trong tương lai.
-    result["has_garden"] = None
-    result["has_garage"] = None
-    result["has_swimming_pool"] = None
-    result["has_air_conditioning"] = None
-
-    # ==========================================
-    # 4. CẬP NHẬT LẠI TỌA ĐỘ & THỜI GIAN
+    # 4. TỌA ĐỘ & THỜI GIAN
     # ==========================================
     result["latitude"] = df.get("latitude", pd.Series(dtype=float))
     result["longitude"] = df.get("longitude", pd.Series(dtype=float))
 
-    parsed_created_at = pd.to_datetime(
-        df.get("post_date", pd.Series(dtype=str)),
-        format="%d/%m/%Y",
-        errors="coerce"
+    # Parse post_date linh hoạt: "dd/mm/yyyy", "Hôm nay", "Hôm qua", "N ngày trước"
+    parsed_created_at = pd.Series(
+        [
+            _parse_post_date(v, c)
+            for v, c in zip(
+                df.get("post_date", pd.Series(dtype=str)),
+                df.get("crawl_date", pd.Series(dtype=str)),
+            )
+        ],
+        index=df.index,
     )
-    # Nếu không parse được post_date (NaT), fallback về crawl_date thay vì
-    # để NULL đè lên DEFAULT CURRENT_TIMESTAMP của DB -> tránh mất mốc thời gian.
+
     fallback_crawl_date = pd.to_datetime(
         df.get("crawl_date", pd.Series(dtype=str)),
         errors="coerce"
     )
     result["created_at"] = parsed_created_at.fillna(fallback_crawl_date)
 
-    result["updated_at"] = pd.to_datetime(
-        df.get("crawl_date", pd.Series(dtype=str)),
-        errors="coerce"
-    )
+    result["updated_at"] = fallback_crawl_date
+    result["crawl_date"] = fallback_crawl_date
 
-    result["crawl_date"] = pd.to_datetime(
-        df.get("crawl_date", pd.Series(dtype=str)),
-        errors="coerce"
-    )
-
-    # Chốt chặn bảo vệ: Dòng nào mất Giá, Diện tích hoặc URL thì bỏ đi
     result = result.dropna(subset=["price", "area", "url"])
 
     return result

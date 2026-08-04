@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="3bd7f30b-9e19-42be-bcce-8dd7dc97673e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/controllers/ApiAdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/controllers/ApiAdminController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/controllers/ApiFavoriteController.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/controllers/ApiFavoriteController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/controllers/ApiUserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/controllers/ApiUserController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/dto/PropertyRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/dto/PropertyRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/CustomerProfileRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/CustomerProfileRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/SellerProfileRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/SellerProfileRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/UserRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/UserRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/CustomerProfileRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/CustomerProfileRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/PropertyRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/PropertyRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/SellerProfileRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/SellerProfileRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/UserRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/repository/impl/UserRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/CustomerProfileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/CustomerProfileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/SellerProfileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/SellerProfileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/CustomerProfileServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/CustomerProfileServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/PropertyServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/PropertyServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/SellerProfileServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/SellerProfileServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/UserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/java/com/hvh/service/impl/UserServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EstateMind/src/main/resources/templates/properties.html" beforeDir="false" afterPath="$PROJECT_DIR$/EstateMind/src/main/resources/templates/properties.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/app/favorites/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/app/favorites/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/app/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/app/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/app/properties/new/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/app/properties/new/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/app/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/app/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/components/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/contexts/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/contexts/AuthContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/services/propertyService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/services/propertyService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/estate-mind-app/src/types/property.ts" beforeDir="false" afterPath="$PROJECT_DIR$/estate-mind-app/src/types/property.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/ai_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/ai_server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/crawler.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/crawler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/ingest_to_chroma.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/ingest_to_chroma.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/load_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/load_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/transform.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/transform.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3H9nDBNk2MubuowQidZEa610WtI" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.crawler.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "D:/Projects/EstateMind",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="crawler" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="EstateMind" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/pipeline" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/pipeline/crawler.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.crawler" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-c59985aa861c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.24374.152" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3bd7f30b-9e19-42be-bcce-8dd7dc97673e" name="Changes" comment="" />
+      <created>1785289029595</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1785289029595</updated>
+    </task>
+    <servers />
+  </component>
+</project>

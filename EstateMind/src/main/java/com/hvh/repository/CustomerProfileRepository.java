@@ -13,4 +13,5 @@ import com.hvh.pojo.CustomerProfile;
 public interface CustomerProfileRepository {
     CustomerProfile createProfile(CustomerProfile profile);
     CustomerProfile getByUserId(int userId);
+    CustomerProfile updateProfile(CustomerProfile profile);
 }

@@ -5,79 +5,346 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
+type RegisterForm = {
+  username: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+};
+
+type FieldErrors = Partial<Record<keyof RegisterForm | "avatar", string>>;
+
+const initialForm: RegisterForm = {
+  username: "",
+  password: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  email: "",
+};
+
+function getReadableError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return "Đăng ký thất bại";
+  }
+
+  const rawMessage = error.message?.trim();
+
+  if (!rawMessage) {
+    return "Đăng ký thất bại";
+  }
+
+  // Trường hợp backend/Tomcat trả nguyên trang HTML lỗi.
+  if (
+    rawMessage.includes("<!doctype html") ||
+    rawMessage.includes("<html")
+  ) {
+    const documentHtml = new DOMParser().parseFromString(
+      rawMessage,
+      "text/html"
+    );
+
+    const paragraphs = Array.from(
+      documentHtml.querySelectorAll("p")
+    );
+
+    const messageParagraph = paragraphs.find(
+      (paragraph) =>
+        paragraph.querySelector("b")?.textContent?.trim() ===
+        "Message"
+    );
+
+    const message = messageParagraph?.textContent
+      ?.replace(/^Message\s*/i, "")
+      .trim();
+
+    return message || "Đăng ký thất bại";
+  }
+
+  return rawMessage;
+}
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-  });
-  const [role, setRole] = useState<"CUSTOMER" | "SELLER">("CUSTOMER");
+  const [form, setForm] = useState<RegisterForm>(initialForm);
+  const [role, setRole] =
+    useState<"CUSTOMER" | "SELLER">("CUSTOMER");
   const [avatar, setAvatar] = useState<File | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function update(key: keyof typeof form, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
+  function update(
+    key: keyof RegisterForm,
+    value: string
+  ) {
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+
+    setErrors((current) => ({
+      ...current,
+      [key]: undefined,
+    }));
+
+    setError(null);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+  function validateForm(): boolean {
+    const nextErrors: FieldErrors = {};
+
+    if (!form.lastName.trim()) {
+      nextErrors.lastName = "Vui lòng nhập họ";
+    }
+
+    if (!form.firstName.trim()) {
+      nextErrors.firstName = "Vui lòng nhập tên";
+    }
+
+    if (!form.username.trim()) {
+      nextErrors.username =
+        "Vui lòng nhập tên đăng nhập";
+    }
+
+    if (!form.password.trim()) {
+      nextErrors.password = "Vui lòng nhập mật khẩu";
+    } else if (form.password.length < 6) {
+      nextErrors.password =
+        "Mật khẩu phải có ít nhất 6 ký tự";
+    }
+
+    const phone = form.phone.replace(/[\s.-]/g, "");
+
+    if (!phone) {
+      nextErrors.phone =
+        "Vui lòng nhập số điện thoại";
+    } else if (!/^[0-9]{9,11}$/.test(phone)) {
+      nextErrors.phone =
+        "Số điện thoại phải gồm 9–11 chữ số";
+    }
+
+    if (!form.email.trim()) {
+      nextErrors.email = "Vui lòng nhập email";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        form.email.trim()
+      )
+    ) {
+      nextErrors.email =
+        "Địa chỉ email không hợp lệ";
+    }
 
     if (!avatar) {
-      setError("Vui lòng chọn ảnh đại diện (bắt buộc).");
+      nextErrors.avatar =
+        "Vui lòng chọn ảnh đại diện";
+    } else if (!avatar.type.startsWith("image/")) {
+      nextErrors.avatar =
+        "Tệp được chọn phải là hình ảnh";
+    } else if (avatar.size > 5 * 1024 * 1024) {
+      nextErrors.avatar =
+        "Ảnh đại diện không được vượt quá 5 MB";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function showServerError(message: string) {
+    const normalized = message.toLowerCase();
+
+    if (normalized.includes("email")) {
+      setErrors((current) => ({
+        ...current,
+        email: message,
+      }));
+      return;
+    }
+
+    if (
+      normalized.includes("số điện thoại") ||
+      normalized.includes("phone")
+    ) {
+      setErrors((current) => ({
+        ...current,
+        phone: message,
+      }));
+      return;
+    }
+
+    if (
+      normalized.includes("tên đăng nhập") ||
+      normalized.includes("username")
+    ) {
+      setErrors((current) => ({
+        ...current,
+        username: message,
+      }));
+      return;
+    }
+
+    if (
+      normalized.includes("mật khẩu") ||
+      normalized.includes("password")
+    ) {
+      setErrors((current) => ({
+        ...current,
+        password: message,
+      }));
+      return;
+    }
+
+    if (normalized.includes("họ")) {
+      setErrors((current) => ({
+        ...current,
+        lastName: message,
+      }));
+      return;
+    }
+
+    if (normalized.includes("tên")) {
+      setErrors((current) => ({
+        ...current,
+        firstName: message,
+      }));
+      return;
+    }
+
+    setError(message);
+  }
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+    setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!avatar) {
       return;
     }
 
     setLoading(true);
+
     try {
-      await register({ ...form, avatar, role });
+      await register({
+        username: form.username.trim(),
+        password: form.password,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        phone: form.phone.replace(/[\s.-]/g, ""),
+        email: form.email.trim(),
+        avatar,
+        role,
+      });
+
       router.push("/");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Đăng ký thất bại");
+    } catch (caughtError) {
+      const message = getReadableError(caughtError);
+      showServerError(message);
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md bg-white border border-gray-200 rounded-md shadow-sm p-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-6 text-center">Đăng ký tài khoản</h1>
+  const inputClass = (hasError: boolean) =>
+    `w-full rounded-md border px-3 py-2 text-sm text-gray-900
+     focus:outline-none ${
+       hasError
+         ? "border-red-500 focus:border-red-500"
+         : "border-gray-300 focus:border-red-500"
+     }`;
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <h1 className="mb-6 text-center text-xl font-bold text-gray-900">
+          Đăng ký tài khoản
+        </h1>
+
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="space-y-4"
+        >
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Họ</label>
+              <label
+                htmlFor="lastName"
+                className="mb-1 block text-sm text-gray-600"
+              >
+                Họ
+              </label>
+
               <input
+                id="lastName"
+                name="lastName"
                 value={form.lastName}
-                onChange={(e) => update("lastName", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                onChange={(event) =>
+                  update("lastName", event.target.value)
+                }
+                autoComplete="family-name"
+                aria-invalid={Boolean(errors.lastName)}
+                className={inputClass(
+                  Boolean(errors.lastName)
+                )}
               />
+
+              {errors.lastName && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.lastName}
+                </p>
+              )}
             </div>
+
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Tên</label>
+              <label
+                htmlFor="firstName"
+                className="mb-1 block text-sm text-gray-600"
+              >
+                Tên
+              </label>
+
               <input
+                id="firstName"
+                name="firstName"
                 value={form.firstName}
-                onChange={(e) => update("firstName", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                onChange={(event) =>
+                  update("firstName", event.target.value)
+                }
+                autoComplete="given-name"
+                aria-invalid={Boolean(errors.firstName)}
+                className={inputClass(
+                  Boolean(errors.firstName)
+                )}
               />
+
+              {errors.firstName && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.firstName}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Bạn đăng ký với vai trò</label>
+            <label className="mb-1 block text-sm text-gray-600">
+              Bạn đăng ký với vai trò
+            </label>
+
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setRole("CUSTOMER")}
-                className={`border rounded-md py-2 text-sm font-medium transition-colors ${
+                className={`rounded-md border py-2 text-sm font-medium transition-colors ${
                   role === "CUSTOMER"
                     ? "border-red-500 bg-red-50 text-red-600"
                     : "border-gray-300 text-gray-600 hover:border-gray-400"
@@ -85,10 +352,11 @@ export default function RegisterPage() {
               >
                 Người mua/thuê
               </button>
+
               <button
                 type="button"
                 onClick={() => setRole("SELLER")}
-                className={`border rounded-md py-2 text-sm font-medium transition-colors ${
+                className={`rounded-md border py-2 text-sm font-medium transition-colors ${
                   role === "SELLER"
                     ? "border-red-500 bg-red-50 text-red-600"
                     : "border-gray-300 text-gray-600 hover:border-gray-400"
@@ -100,70 +368,186 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Tên đăng nhập</label>
+            <label
+              htmlFor="username"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Tên đăng nhập
+            </label>
+
             <input
+              id="username"
+              name="username"
               value={form.username}
-              onChange={(e) => update("username", e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              onChange={(event) =>
+                update("username", event.target.value)
+              }
+              autoComplete="username"
+              aria-invalid={Boolean(errors.username)}
+              className={inputClass(
+                Boolean(errors.username)
+              )}
             />
+
+            {errors.username && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.username}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Mật khẩu</label>
+            <label
+              htmlFor="password"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Mật khẩu
+            </label>
+
             <input
+              id="password"
+              name="password"
               type="password"
               value={form.password}
-              onChange={(e) => update("password", e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              onChange={(event) =>
+                update("password", event.target.value)
+              }
+              autoComplete="new-password"
+              aria-invalid={Boolean(errors.password)}
+              className={inputClass(
+                Boolean(errors.password)
+              )}
             />
+
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.password}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Số điện thoại</label>
+            <label
+              htmlFor="phone"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Số điện thoại
+            </label>
+
             <input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="numeric"
               value={form.phone}
-              onChange={(e) => update("phone", e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              onChange={(event) =>
+                update("phone", event.target.value)
+              }
+              autoComplete="tel"
+              aria-invalid={Boolean(errors.phone)}
+              className={inputClass(
+                Boolean(errors.phone)
+              )}
             />
+
+            {errors.phone && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.phone}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Email</label>
+            <label
+              htmlFor="email"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Email
+            </label>
+
             <input
+              id="email"
+              name="email"
               type="email"
               value={form.email}
-              onChange={(e) => update("email", e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              onChange={(event) =>
+                update("email", event.target.value)
+              }
+              autoComplete="email"
+              aria-invalid={Boolean(errors.email)}
+              className={inputClass(
+                Boolean(errors.email)
+              )}
             />
+
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.email}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Ảnh đại diện *</label>
+            <label
+              htmlFor="avatar"
+              className="mb-1 block text-sm text-gray-600"
+            >
+              Ảnh đại diện *
+            </label>
+
             <input
+              id="avatar"
+              name="avatar"
               type="file"
               accept="image/*"
-              onChange={(e) => setAvatar(e.target.files?.[0] || null)}
-              required
-              className="w-full text-sm"
+              onChange={(event) => {
+                const selectedFile =
+                  event.target.files?.[0] || null;
+
+                setAvatar(selectedFile);
+                setErrors((current) => ({
+                  ...current,
+                  avatar: undefined,
+                }));
+                setError(null);
+              }}
+              aria-invalid={Boolean(errors.avatar)}
+              className="w-full text-sm text-gray-700"
             />
+
+            {errors.avatar && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.avatar}
+              </p>
+            )}
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <div
+              role="alert"
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+            >
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-md transition-colors disabled:opacity-50"
+            className="w-full rounded-md bg-red-500 py-2.5 font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Đang đăng ký..." : "Đăng ký"}
+            {loading
+              ? "Đang đăng ký..."
+              : "Đăng ký"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-500 text-center mt-4">
+        <p className="mt-4 text-center text-sm text-gray-500">
           Đã có tài khoản?{" "}
-          <Link href="/login" className="text-red-500 font-medium hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-red-500 hover:underline"
+          >
             Đăng nhập
           </Link>
         </p>

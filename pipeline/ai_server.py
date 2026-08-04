@@ -168,9 +168,11 @@ def build_legal_context(documents: list[Any]) -> str:
             "article_number",
             "Không rõ điều khoản",
         )
+        effective_date = document.metadata.get("effective_date", "không rõ")
 
         lines.append(
-            f"- [{source} - {article}]: {document.page_content}"
+            f"- [{source} - {article}, hiệu lực từ {effective_date}]: "
+            f"{document.page_content}"
         )
 
     return "\n".join(lines)
@@ -184,10 +186,14 @@ def build_property_context(documents: list[Any]) -> str:
         price = document.metadata.get("price", "N/A")
         district = document.metadata.get("district", "N/A")
         url = document.metadata.get("url", "")
+        posted_date = document.metadata.get("posted_date", "không rõ")
+        crawled_date = document.metadata.get("crawled_date", "không rõ")
+        source_site = document.metadata.get("source_site", "không rõ")
 
         lines.append(
             f"- [Mã: {property_id}, Giá: {price} VNĐ, "
-            f"Khu vực: {district}, URL: {url}]: "
+            f"Khu vực: {district}, Ngày đăng: {posted_date}, "
+            f"Nguồn: {source_site}, Thu thập: {crawled_date}, URL: {url}]: "
             f"{document.page_content}"
         )
 
@@ -226,6 +232,9 @@ def build_sources(
                 "bedrooms": metadata.get("bedrooms"),
                 "legalVerified": metadata.get("legal_verified"),
                 "sourceUrl": metadata.get("url"),
+                "sourceSite": metadata.get("source_site"),
+                "postedDate": metadata.get("posted_date"),
+                "crawledDate": metadata.get("crawled_date"),
                 "detailPath": f"/properties/{property_id}",
             }
         )

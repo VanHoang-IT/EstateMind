@@ -16,13 +16,14 @@ export default function FavoritesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
+    if (!authLoading && (!user || user.userRole !== "ROLE_CUSTOMER")) {
+      const timer = setTimeout(() => router.push("/login"), 0);
+      return () => clearTimeout(timer);
     }
   }, [authLoading, user, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.userRole !== "ROLE_CUSTOMER") return;
     favoriteService
       .getFavorites()
       .then(setProperties)
@@ -30,8 +31,12 @@ export default function FavoritesPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (authLoading || !user) {
-    return <div className="min-h-[50vh] flex items-center justify-center text-gray-400">Đang tải...</div>;
+  if (authLoading || !user || user.userRole !== "ROLE_CUSTOMER") {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-gray-400">
+        Đang tải...
+      </div>
+    );
   }
 
   return (

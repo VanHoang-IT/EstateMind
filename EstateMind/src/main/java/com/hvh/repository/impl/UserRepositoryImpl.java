@@ -28,51 +28,89 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Autowired
     private LocalSessionFactoryBean factory;
+
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
     @Autowired
     private Environment env;
 
     @Override
+    @Transactional(readOnly = true)
     public Users getUserByUsername(String username) {
-        Session session = this.factory.getObject().getCurrentSession();
-        Query q = session.createNamedQuery("Users.findByUsername", Users.class);
-        q.setParameter("username", username);
+        Session session =
+                this.factory.getObject().getCurrentSession();
 
-        return (Users) q.getSingleResult();
+        Query<Users> query = session.createNamedQuery(
+                "Users.findByUsername",
+                Users.class
+        );
 
+        query.setParameter("username", username);
+
+        return query.getResultStream()
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Users getUserById(int id) {
-        Session session = this.factory.getObject().getCurrentSession();
+        Session session =
+                this.factory.getObject().getCurrentSession();
+
         return session.get(Users.class, id);
     }
 
     @Override
-    public Users addUser(Users u) {
-        Session session = this.factory.getObject().getCurrentSession();
-        session.persist(u);
-        
-        return u;
+    public Users addUser(Users user) {
+        Session session =
+                this.factory.getObject().getCurrentSession();
+
+        session.persist(user);
+        session.flush();
+
+        return user;
     }
 
     @Override
-    public boolean authenticate(String username, String password) {
-        Users u = this.getUserByUsername(username);
+    @Transactional(readOnly = true)
+    public boolean authenticate(
+            String username,
+            String password) {
 
-        return this.passwordEncoder.matches(password, u.getPassword());
+        Users user = this.getUserByUsername(username);
+
+        return user != null
+                && Boolean.TRUE.equals(user.getActive())
+                && this.passwordEncoder.matches(
+                        password,
+                        user.getPassword()
+                );
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Users> getUsers(Integer page) {
-        Session session = this.factory.getObject().getCurrentSession();
+        Session session =
+                this.factory.getObject().getCurrentSession();
 
-        Query<Users> query = session.createQuery("FROM Users ORDER BY id DESC", Users.class);
+        Query<Users> query = session.createQuery(
+                "FROM Users ORDER BY id DESC",
+                Users.class
+        );
 
         if (page != null) {
-            int pageSize = env.getProperty("properties.page_size", Integer.class, 10);
-            query.setFirstResult((Math.max(page, 1) - 1) * pageSize);
+            int pageSize = env.getProperty(
+                    "properties.page_size",
+                    Integer.class,
+                    10
+            );
+
+            query.setFirstResult(
+                    (Math.max(page, 1) - 1) * pageSize
+            );
+
             query.setMaxResults(pageSize);
         }
 
@@ -81,13 +119,26 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Users updateRole(int id, String role) {
-        Session session = this.factory.getObject().getCurrentSession();
-        Users u = session.get(Users.class, id);
-        if (u == null) {
-            throw new RuntimeException("Không tìm thấy người dùng với id " + id);
+        Session session =
+                this.factory.getObject().getCurrentSession();
+
+        Users user = session.get(Users.class, id);
+
+        if (user == null) {
+            throw new IllegalArgumentException(
+                    "Không tìm thấy người dùng với id " + id
+            );
         }
-        u.setUserRole(role);
-        session.merge(u);
-        return u;
+
+        user.setUserRole(role);
+        session.merge(user);
+
+        return user;
+    }
+    
+    @Override
+    public Users updateUser(Users u) {
+        Session session = this.factory.getObject().getCurrentSession();
+        return session.merge(u);
     }
 }

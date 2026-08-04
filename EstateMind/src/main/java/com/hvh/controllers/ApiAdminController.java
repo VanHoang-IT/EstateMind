@@ -47,7 +47,6 @@ public class ApiAdminController {
     @Autowired
     private Cloudinary cloudinary;
 
-    // ---- UPLOAD ẢNH (dùng chung cho property/category nếu cần ảnh rời) ----
     @PostMapping("/upload-image")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
@@ -180,6 +179,18 @@ public class ApiAdminController {
             Users admin = this.userService.getUserByUsername(auth.getName());
             this.reviewService.deleteReview(id, admin);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+    
+    @PatchMapping("/verifications/{userId}/approve")
+    public ResponseEntity<?> approveVerification(@PathVariable("userId") int userId) {
+        try {
+            this.userService.approveVerification(userId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }

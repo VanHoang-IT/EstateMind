@@ -11,30 +11,67 @@ import com.hvh.service.CustomerProfileService;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 /**
  *
  * @author acer
  */
 @Service
-public class CustomerProfileServiceImpl implements CustomerProfileService {
+public class CustomerProfileServiceImpl
+        implements CustomerProfileService {
 
     @Autowired
     private CustomerProfileRepository customerProfileRepo;
 
     @Override
+    @Transactional
     public CustomerProfile createProfileForUser(Users user) {
-        CustomerProfile profile = new CustomerProfile();
-        profile.setId(user.getId()); // khoá chính dùng chung với Users.id — bắt buộc set tay
-        profile.setUsers(user);
-        profile.setIdentityVerified(false);
-        profile.setCreatedAt(new Date());
-        profile.setUpdatedAt(new Date());
 
-        return this.customerProfileRepo.createProfile(profile);
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException(
+                    "Người dùng chưa được lưu"
+            );
+        }
+
+        CustomerProfile existing =
+                this.customerProfileRepo.getByUserId(
+                        user.getId()
+                );
+
+        if (existing != null) {
+            return existing;
+        }
+
+        Date now = new Date();
+
+        CustomerProfile profile =
+                new CustomerProfile();
+
+        profile.setId(user.getId());
+        profile.setUsers(user);
+        profile.setAddress(null);
+        profile.setIdentityNumber(null);
+        profile.setIdentityVerified(false);
+        profile.setCreatedAt(now);
+        profile.setUpdatedAt(now);
+
+        return this.customerProfileRepo.createProfile(
+                profile
+        );
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CustomerProfile getByUserId(int userId) {
-        return this.customerProfileRepo.getByUserId(userId);
+        return this.customerProfileRepo.getByUserId(
+                userId
+        );
+    }
+    
+    @Override
+    @Transactional
+    public CustomerProfile updateProfile(CustomerProfile profile) {
+        return this.customerProfileRepo.updateProfile(profile);
     }
 }

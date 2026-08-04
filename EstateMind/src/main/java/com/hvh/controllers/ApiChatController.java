@@ -10,10 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- *
  * @author acer
  */
 @RestController
@@ -52,59 +55,36 @@ public class ApiChatController {
     @PostMapping(
             value = "/chat/ask",
             consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> askQuestion(
-            @RequestBody ChatRequestPayload request,
-            Principal principal) {
+            @RequestBody ChatRequestPayload request, Principal principal) {
 
         try {
-            if (request.getQuestion() == null
-                    || request.getQuestion().isBlank()) {
+            if (request.getQuestion() == null || request.getQuestion().isBlank()) {
                 return new ResponseEntity<>(
-                        Map.of(
-                                "message",
-                                "Câu hỏi không được để trống"
-                        ),
-                        HttpStatus.BAD_REQUEST
-                );
+                        Map.of("message", "Câu hỏi không được để trống"), HttpStatus.BAD_REQUEST);
             }
 
             Users currentUser;
 
             if (principal != null) {
-                currentUser = this.userService.getUserByUsername(
-                        principal.getName()
-                );
+                currentUser = this.userService.getUserByUsername(principal.getName());
             } else {
-                /*
-                 * Người dùng khách.
-                 * Database phải tồn tại user có ID = 1.
-                 */
+
                 currentUser = this.userService.getUserById(1);
             }
 
             if (currentUser == null) {
                 return new ResponseEntity<>(
-                        Map.of(
-                                "message",
-                                "Không xác định được người dùng"
-                        ),
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                );
+                        Map.of("message", "Không xác định được người dùng"),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             ChatResponseDTO response =
                     this.ragChatService.generateFullAnswer(
-                            request.getQuestion().trim(),
-                            request.getSessionId(),
-                            currentUser
-                    );
+                            request.getQuestion().trim(), request.getSessionId(), currentUser);
 
-            return new ResponseEntity<>(
-                    response,
-                    HttpStatus.OK
-            );
+            return new ResponseEntity<>(response, HttpStatus.OK);
 
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -112,12 +92,8 @@ public class ApiChatController {
             return new ResponseEntity<>(
                     Map.of(
                             "message",
-                            e.getMessage() != null
-                                    ? e.getMessage()
-                                    : "Không thể xử lý câu hỏi"
-                    ),
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
+                            e.getMessage() != null ? e.getMessage() : "Không thể xử lý câu hỏi"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

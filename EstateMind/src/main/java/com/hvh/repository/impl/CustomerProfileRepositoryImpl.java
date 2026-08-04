@@ -41,4 +41,10 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
 
         return query.getResultStream().findFirst().orElse(null);
     }
+    
+    @Override
+    public CustomerProfile updateProfile(CustomerProfile profile) {
+        Session session = this.factory.getObject().getCurrentSession();
+        return session.merge(profile);
+    }
 }

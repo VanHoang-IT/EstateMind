@@ -17,6 +17,7 @@ export interface PropertyMutationResponse {
   message?: string;
 }
 
+
 function buildQuery(filters: PropertyFilters): string {
   const params = new URLSearchParams();
 
@@ -48,6 +49,10 @@ function buildQuery(filters: PropertyFilters): string {
       "bedrooms",
       String(filters.bedrooms)
     );
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status);
   }
 
   params.set("page", String(filters.page ?? 1));

@@ -120,7 +120,8 @@ def fetch_pending_properties(engine, force: bool = False):
     query = """
         SELECT p.id, p.title, p.description, p.address, p.district,
                p.price, p.area, p.bedrooms, p.status, p.legal_verified,
-               p.latitude, p.longitude, p.url,
+               p.latitude, p.longitude, p.url, p.url_crawl,
+               p.created_at, p.crawl_date,
                vs.content_hash AS synced_hash
         FROM property p
         LEFT JOIN vector_sync_status vs
@@ -132,7 +133,10 @@ def fetch_pending_properties(engine, force: bool = False):
 
     pending = []
     for row in rows:
-        raw = f"{row['title']}|{row['description']}|{row['price']}|{row['area']}|{row['district']}"
+        raw = (
+            f"{row['title']}|{row['description']}|{row['price']}|"
+            f"{row['area']}|{row['district']}|{row['created_at']}|{row['crawl_date']}"
+        )
         current_hash = content_hash(raw)
         if force or row["synced_hash"] != current_hash:
             pending.append({**row, "content_hash": current_hash})
@@ -165,13 +169,34 @@ def fetch_pending_legal_docs(engine, force: bool = False):
 _splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=50)
 
 
+def _fmt_date(value, with_time: bool = False) -> str:
+    if not value:
+        return "không rõ"
+    fmt = "%d/%m/%Y %H:%M" if with_time else "%d/%m/%Y"
+    try:
+        return value.strftime(fmt)
+    except AttributeError:
+        return str(value)
+
+
 def build_property_documents(row: dict) -> list[Document]:
+    posted_date = _fmt_date(row.get("created_at"))
+    crawled_date = _fmt_date(row.get("crawl_date"), with_time=True)
+    source_site = row.get("url_crawl") or "Người dùng đăng trực tiếp trên EstateMind"
+
+    if row.get("url_crawl"):
+        source_line = f"Nguồn dữ liệu: {source_site} (thu thập lúc {crawled_date})"
+    else:
+        source_line = f"Nguồn dữ liệu: {source_site}"
+
     text_content = (
         f"Tiêu đề: {row['title']}\n"
         f"Địa chỉ: {row['address']}, {row['district']}\n"
         f"Giá: {row['price']} VNĐ\n"
         f"Diện tích: {row['area']} m2\n"
         f"Số phòng ngủ: {row['bedrooms']}\n"
+        f"Ngày đăng tin: {posted_date}\n"
+        f"{source_line}\n"
         f"Mô tả: {row['description']}"
     )
     metadata = {
@@ -182,6 +207,9 @@ def build_property_documents(row: dict) -> list[Document]:
         "bedrooms": row["bedrooms"] or 0,
         "legal_verified": bool(row["legal_verified"]),
         "url": row["url"] or "",
+        "source_site": source_site,
+        "posted_date": posted_date,
+        "crawled_date": crawled_date,
     }
     chunks = _splitter.split_text(text_content)
     return [
@@ -191,15 +219,19 @@ def build_property_documents(row: dict) -> list[Document]:
 
 
 def build_legal_documents(row: dict) -> list[Document]:
+    effective_date = _fmt_date(row.get("effective_date"))
+
     text_content = (
         f"{row['title']} ({row['article_number']})\n"
-        f"Nguồn: {row['source']}\n\n"
+        f"Nguồn: {row['source']}\n"
+        f"Ngày hiệu lực: {effective_date}\n\n"
         f"{row['content']}"
     )
     metadata = {
         "legal_document_id": row["id"],
         "source": row["source"] or "",
         "article_number": row["article_number"] or "",
+        "effective_date": effective_date,
     }
     chunks = _splitter.split_text(text_content)
     return [

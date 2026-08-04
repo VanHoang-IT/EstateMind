@@ -63,6 +63,8 @@ export interface PropertyFilters {
   minPrice?: number;
   maxPrice?: number;
   categoryId?: number;
+  status?: string;
+  sellerId?: number;
   bedrooms?: number;
   page?: number;
   size?: number;

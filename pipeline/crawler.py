@@ -32,7 +32,7 @@ def safe_text(driver, css):
 
 
 # =========================
-# LAT/LNG EXTRACT (ĐÃ FIX)
+# LAT/LNG EXTRACT
 # =========================
 # Bounding box gần đúng của TP.HCM (sau sáp nhập, bao gồm cả Bình Dương,
 # Bà Rịa - Vũng Tàu cũ) — nới rộng một chút để không loại nhầm toạ độ hợp lệ.
@@ -52,17 +52,9 @@ def extract_lat_lng(driver):
     """
     Tìm toạ độ của tin đăng trong script chứa 'getListingRecommendationParams'.
 
-    LƯU Ý: script này có thể chứa toạ độ của NHIỀU tin (bao gồm cả các tin
-    "đề xuất/liên quan" ở cuối trang, có thể ở bất kỳ tỉnh thành nào) —
-    không chỉ toạ độ của tin đang xem.
-
-    Trước đây code chỉ lấy CẶP LAT/LNG ĐẦU TIÊN tìm thấy trong script ->
-    nếu tin đề xuất đầu tiên không phải ở TP.HCM, sẽ lấy nhầm toạ độ sai
-    hoàn toàn (đã xảy ra thực tế: nhiều tin bị gán nhầm toạ độ Hà Nội).
-
-    Cách sửa: quét TẤT CẢ các cặp lat/lng tìm được, chỉ chấp nhận cặp đầu
-    tiên nằm trong phạm vi hợp lý của TP.HCM. Nếu không có cặp nào hợp lệ
-    -> trả về None, None (thà thiếu dữ liệu còn hơn lưu sai vị trí).
+    Quét TẤT CẢ các cặp lat/lng tìm được, chỉ chấp nhận cặp đầu tiên nằm
+    trong phạm vi hợp lý của TP.HCM. Nếu không có cặp nào hợp lệ ->
+    trả về None, None (thà thiếu dữ liệu còn hơn lưu sai vị trí).
     """
     try:
         scripts = driver.find_elements(
@@ -86,7 +78,6 @@ def extract_lat_lng(driver):
 
                 if is_valid_hcm_coordinate(lat, lng):
                     return lat, lng
-                # Nếu không hợp lệ -> bỏ qua, thử cặp tiếp theo trong script
 
         print("⚠️ Không tìm được toạ độ hợp lệ (TP.HCM) trong script — bỏ trống lat/lng.")
         return None, None
@@ -97,12 +88,19 @@ def extract_lat_lng(driver):
 
 
 # =========================
+# IMAGE SRC CLEAN
+# =========================
+def clean_image_src(src: str) -> str:
+    """Bỏ đoạn resize để lấy ảnh gốc kích thước lớn."""
+    return re.sub(r"/resize/\d+x\d+/", "/", src)
+
+
+# =========================
 # IMAGES EXTRACT
 # =========================
 def extract_images(driver):
     """
     Tìm tất cả các thẻ img trong slide ảnh, lấy data-src hoặc src.
-    Loại bỏ đoạn '/resize/200x200/' để lấy được link ảnh gốc kích thước lớn.
     """
     images = []
     try:
@@ -110,8 +108,7 @@ def extract_images(driver):
         for el in elements:
             src = el.get_attribute("data-src") or el.get_attribute("src")
             if src:
-                full_img_src = src.replace("/resize/200x200/", "/")
-                images.append(full_img_src)
+                images.append(clean_image_src(src))
 
         return list(dict.fromkeys(images))
     except Exception as e:
@@ -122,7 +119,7 @@ def extract_images(driver):
 # =========================
 # DETAIL CRAWL
 # =========================
-def crawl_detail(driver, url):
+def crawl_detail(driver, url, main_image=""):
     driver.get(url)
     try:
         WebDriverWait(driver, 15).until(
@@ -142,6 +139,10 @@ def crawl_detail(driver, url):
     latitude, longitude = extract_lat_lng(driver)
     images = extract_images(driver)
 
+    # Nếu list page không lấy được ảnh cover -> fallback ảnh đầu trong slide
+    if not main_image and images:
+        main_image = images[0]
+
     # ===== BÓC TÁCH ADDRESS & DISTRICT =====
     address_val = safe_text(driver, "#product-detail-web > div.re__ldp-address > span > span.re__address-line-1")
     district_val = safe_text(driver, "#product-detail-web > div.re__ldp-address > span > span.re__address-line-2")
@@ -149,6 +150,7 @@ def crawl_detail(driver, url):
     data = {
         "url": url,
         "title": title,
+        "main_image": main_image,
         "address": address_val,
         "district": district_val,
         "price_raw": safe_text(driver, ".re__pr-short-info.js__pr-short-info > div:nth-child(1) > span.value"),
@@ -165,12 +167,12 @@ def crawl_detail(driver, url):
         "crawl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    print(f"✅ {title} | lat={latitude} lng={longitude} | {len(images)} photos")
+    print(f"✅ {title} | lat={latitude} lng={longitude} | {len(images)} photos | cover={'có' if main_image else 'KHÔNG'}")
     return data, images
 
 
 # =========================
-# LIST PAGE (LINH HOẠT ĐƯỜNG DẪN)
+# LIST PAGE — lấy link tin + ảnh đại diện trên card
 # =========================
 def crawl_list(driver, page, category_path):
     url = f"https://batdongsan.com.vn/{category_path}/p{page}"
@@ -186,6 +188,14 @@ def crawl_list(driver, page, category_path):
 
     time.sleep(random.uniform(2, 4))
 
+    # Scroll xuống cuối để ảnh lazy-load được gán src/data-src đầy đủ
+    try:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1.5)
+    except Exception:
+        pass
+
+    # BƯỚC 1: lấy link (giữ nguyên logic bản gốc đã chạy ổn)
     try:
         urls = driver.execute_script("""
             const links = document.querySelectorAll('#product-lists-web a[href]');
@@ -199,8 +209,27 @@ def crawl_list(driver, page, category_path):
     urls = [u for u in urls if u and "batdongsan.com.vn" in u and detail_pattern.search(u)]
     urls = list(dict.fromkeys(urls))
 
-    print(f"🔗 FOUND LINKS: {len(urls)}")
-    return urls
+    # BƯỚC 2: lấy map link -> ảnh cover; lỗi thì bỏ qua, không hỏng luồng chính
+    cover_map = {}
+    try:
+        pairs = driver.execute_script("""
+            const links = document.querySelectorAll('#product-lists-web a[href]');
+            return Array.from(links).map(a => {
+                const img = a.querySelector('img');
+                const src = img ? (img.getAttribute('data-src') || img.getAttribute('src') || '') : '';
+                return [a.href, src];
+            });
+        """)
+        for href, src in pairs:
+            if href and src and href not in cover_map:
+                cover_map[href] = clean_image_src(src.strip())
+    except Exception as e:
+        print("⚠️ cover extract error (bỏ qua):", e)
+
+    results = [{"url": u, "main_image": cover_map.get(u, "")} for u in urls]
+
+    print(f"🔗 FOUND LINKS: {len(results)}")
+    return results
 
 
 # =========================
@@ -234,22 +263,34 @@ def main():
     output_file = "data/batdongsan_live_1.csv"
     images_file = "data/batdongsan_images_1.csv"
 
-    if os.path.exists(output_file): os.remove(output_file)
-    if os.path.exists(images_file): os.remove(images_file)
+    # RESUME: không xoá file cũ, bỏ qua các url đã crawl rồi
+    crawled_urls = set()
+    if os.path.exists(output_file):
+        try:
+            crawled_urls = set(pd.read_csv(output_file)["url"].dropna())
+            print(f"↩️ RESUME: đã có {len(crawled_urls)} tin, sẽ bỏ qua")
+        except Exception:
+            pass
 
     print("🚀 START CRAWLER - BỘ SỐ 1")
 
     try:
-        for page in range(50, 200):
-            urls = crawl_list(driver, page, category_path="nha-dat-ban-tp-hcm")
+        for page in range(1, 50):
+            entries = crawl_list(driver, page, category_path="ban-can-ho-chung-cu-tp-hcm")
 
-            for url in urls:
+            for entry in entries:
+                url = entry["url"]
+
+                if url in crawled_urls:
+                    continue
+
                 try:
-                    data, images = crawl_detail(driver, url)
+                    data, images = crawl_detail(driver, url, entry["main_image"])
 
                     if data:
                         save_row(output_file, data)
                         save_images(images_file, url, images)
+                        crawled_urls.add(url)
                         print("💾 SAVED Data & Images")
 
                     time.sleep(random.uniform(1, 2))

@@ -35,7 +35,7 @@ public class PropertyRepositoryImpl implements PropertyRepository {
     @Autowired
     private LocalSessionFactoryBean factory;
 
-    private List<Predicate> buildPredicates(CriteriaBuilder b, Root<Property> root, Map<String, String> params) {
+     private List<Predicate> buildPredicates(CriteriaBuilder b, Root<Property> root, Map<String, String> params) {
         List<Predicate> predicates = new ArrayList<>();
         if (params == null) {
             return predicates;
@@ -69,6 +69,16 @@ public class PropertyRepositoryImpl implements PropertyRepository {
         String bedrooms = params.get("bedrooms");
         if (bedrooms != null && !bedrooms.isBlank()) {
             predicates.add(b.equal(root.get("bedrooms"), Integer.parseInt(bedrooms)));
+        }
+
+        String status = params.get("status");
+        if (status != null && !status.isBlank()) {
+            predicates.add(b.equal(root.get("status"), status.toUpperCase()));
+        }
+
+        String sellerId = params.get("sellerId");
+        if (sellerId != null && !sellerId.isBlank()) {
+            predicates.add(b.equal(root.get("sellerId").get("id"), Integer.parseInt(sellerId)));
         }
 
         return predicates;

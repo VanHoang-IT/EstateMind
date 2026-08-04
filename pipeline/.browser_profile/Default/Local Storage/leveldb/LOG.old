@@ -1,0 +1,9 @@
+2026/07/29-16:31:03.948 30a8 Reusing MANIFEST D:\Projects\EstateMind\pipeline\.browser_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/07/29-16:31:03.955 30a8 Recovering log #4
+2026/07/29-16:31:03.956 30a8 Level-0 table #7: started
+2026/07/29-16:31:03.961 30a8 Level-0 table #7: 17333 bytes OK
+2026/07/29-16:31:03.961 30a8 Recovering log #6
+2026/07/29-16:31:03.962 30a8 Level-0 table #8: started
+2026/07/29-16:31:03.965 30a8 Level-0 table #8: 15284 bytes OK
+2026/07/29-16:31:03.972 30a8 Delete type=0 #4
+2026/07/29-16:31:03.972 30a8 Delete type=0 #6

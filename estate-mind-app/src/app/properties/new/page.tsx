@@ -237,6 +237,7 @@ export default function NewPropertyPage() {
           description: form.description?.trim() || undefined,
           address: form.address.trim(),
           district: form.district?.trim() || undefined,
+          price: Math.round(form.price * 1_000_000_000),
         },
         mainImage,
         propertyImages,
@@ -330,7 +331,7 @@ export default function NewPropertyPage() {
               htmlFor="property-price"
               className="mb-1 block text-sm text-gray-600"
             >
-              Giá (tỷ) *
+              Giá (VNĐ) *
             </label>
 
             <input
