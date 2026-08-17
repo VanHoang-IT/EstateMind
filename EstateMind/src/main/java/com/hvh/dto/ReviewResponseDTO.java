@@ -5,9 +5,6 @@
 package com.hvh.dto;
 
 /**
- *
  * @author acer
  */
-public class ReviewResponseDTO {
-    
-}
+public class ReviewResponseDTO {}

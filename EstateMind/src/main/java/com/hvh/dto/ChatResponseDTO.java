@@ -5,16 +5,15 @@
 package com.hvh.dto;
 
 /**
- *
  * @author acer
  */
 public class ChatResponseDTO {
 
     private String answer;
+
     private Integer sessionId;
 
-    public ChatResponseDTO() {
-    }
+    public ChatResponseDTO() {}
 
     public ChatResponseDTO(String answer, Integer sessionId) {
         this.answer = answer;

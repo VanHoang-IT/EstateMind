@@ -7,15 +7,11 @@ package com.hvh.service;
 
 import com.hvh.dto.ChatResponseDTO;
 import com.hvh.pojo.Users;
+
 /**
- *
  * @author acer
  */
 public interface RagChatService {
 
-    ChatResponseDTO generateFullAnswer(
-            String userQuestion,
-            Integer sessionId,
-            Users currentUser
-    );
+    ChatResponseDTO generateFullAnswer(String userQuestion, Integer sessionId, Users currentUser);
 }

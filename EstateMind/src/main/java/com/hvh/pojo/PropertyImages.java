@@ -22,7 +22,6 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -30,31 +29,41 @@ import java.io.Serializable;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "PropertyImages.findAll", query = "SELECT p FROM PropertyImages p"),
-    @NamedQuery(name = "PropertyImages.findById", query = "SELECT p FROM PropertyImages p WHERE p.id = :id"),
-    @NamedQuery(name = "PropertyImages.findByImageUrl", query = "SELECT p FROM PropertyImages p WHERE p.imageUrl = :imageUrl"),
-    @NamedQuery(name = "PropertyImages.findByIsPrimary", query = "SELECT p FROM PropertyImages p WHERE p.isPrimary = :isPrimary")})
+    @NamedQuery(
+            name = "PropertyImages.findById",
+            query = "SELECT p FROM PropertyImages p WHERE p.id = :id"),
+    @NamedQuery(
+            name = "PropertyImages.findByImageUrl",
+            query = "SELECT p FROM PropertyImages p WHERE p.imageUrl = :imageUrl"),
+    @NamedQuery(
+            name = "PropertyImages.findByIsPrimary",
+            query = "SELECT p FROM PropertyImages p WHERE p.isPrimary = :isPrimary")
+})
 public class PropertyImages implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 2147483647)
     @Column(name = "image_url")
     private String imageUrl;
+
     @Column(name = "is_primary")
     private Boolean isPrimary;
+
     @JsonIgnore
     @JoinColumn(name = "property_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Property propertyId;
 
-    public PropertyImages() {
-    }
+    public PropertyImages() {}
 
     public PropertyImages(Integer id) {
         this.id = id;
@@ -111,7 +120,8 @@ public class PropertyImages implements Serializable {
             return false;
         }
         PropertyImages other = (PropertyImages) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -121,5 +131,4 @@ public class PropertyImages implements Serializable {
     public String toString() {
         return "com.hvh.pojo.PropertyImages[ id=" + id + " ]";
     }
-    
 }

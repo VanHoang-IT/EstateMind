@@ -6,8 +6,8 @@ package com.hvh.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
+
 /**
- *
  * @author acer
  */
 public class UpdateProfileDTO {

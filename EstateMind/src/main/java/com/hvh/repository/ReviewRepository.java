@@ -5,7 +5,6 @@
 package com.hvh.repository;
 
 /**
- *
  * @author acer
  */
 import com.hvh.pojo.Review;
@@ -14,8 +13,12 @@ import java.util.Map;
 
 public interface ReviewRepository {
     List<Review> getReviews(Map<String, String> params);
+
     void addReviewOrUpdate(Review review);
+
     Review getReviewById(Integer id);
+
     void deleteReview(Integer id);
+
     List<Review> getReviewsByPropertyId(Integer propertyId);
 }

@@ -25,7 +25,6 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -34,8 +33,13 @@ import java.util.Set;
 @NamedQueries({
     @NamedQuery(name = "Category.findAll", query = "SELECT c FROM Category c"),
     @NamedQuery(name = "Category.findById", query = "SELECT c FROM Category c WHERE c.id = :id"),
-    @NamedQuery(name = "Category.findByName", query = "SELECT c FROM Category c WHERE c.name = :name"),
-    @NamedQuery(name = "Category.findByDescription", query = "SELECT c FROM Category c WHERE c.description = :description")})
+    @NamedQuery(
+            name = "Category.findByName",
+            query = "SELECT c FROM Category c WHERE c.name = :name"),
+    @NamedQuery(
+            name = "Category.findByDescription",
+            query = "SELECT c FROM Category c WHERE c.description = :description")
+})
 public class Category implements Serializable {
 
     @Basic(optional = false)
@@ -43,25 +47,28 @@ public class Category implements Serializable {
     @Size(min = 1, max = 100)
     @Column(name = "name")
     private String name;
+
     @Size(max = 2147483647)
     @Column(name = "description")
     private String description;
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @OneToMany(mappedBy = "categoryId")
     @JsonIgnore
     private Set<Property> propertySet;
+
     @JoinColumn(name = "property_type_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private PropertyType propertyTypeId;
 
-    public Category() {
-    }
+    public Category() {}
 
     public Category(Integer id) {
         this.id = id;
@@ -79,7 +86,6 @@ public class Category implements Serializable {
     public void setId(Integer id) {
         this.id = id;
     }
-
 
     @XmlTransient
     public Set<Property> getPropertySet() {
@@ -112,7 +118,8 @@ public class Category implements Serializable {
             return false;
         }
         Category other = (Category) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -138,5 +145,4 @@ public class Category implements Serializable {
     public void setDescription(String description) {
         this.description = description;
     }
-    
 }

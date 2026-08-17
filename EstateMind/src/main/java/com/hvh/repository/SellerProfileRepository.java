@@ -5,12 +5,14 @@
 package com.hvh.repository;
 
 import com.hvh.pojo.SellerProfile;
+
 /**
- *
  * @author acer
  */
 public interface SellerProfileRepository {
     SellerProfile createProfile(SellerProfile profile);
+
     SellerProfile getByUserId(int userId);
+
     SellerProfile updateProfile(SellerProfile profile);
 }

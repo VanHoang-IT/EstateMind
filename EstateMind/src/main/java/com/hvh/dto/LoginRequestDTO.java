@@ -5,8 +5,8 @@
 package com.hvh.dto;
 
 import jakarta.validation.constraints.NotBlank;
+
 /**
- *
  * @author acer
  */
 public class LoginRequestDTO {
@@ -17,12 +17,9 @@ public class LoginRequestDTO {
     @NotBlank(message = "Mật khẩu không được để trống")
     private String password;
 
-    public LoginRequestDTO() {
-    }
+    public LoginRequestDTO() {}
 
-    public LoginRequestDTO(
-            String username,
-            String password) {
+    public LoginRequestDTO(String username, String password) {
 
         this.username = username;
         this.password = password;

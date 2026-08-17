@@ -6,13 +6,16 @@ package com.hvh.repository;
 
 import com.hvh.pojo.Category;
 import java.util.List;
+
 /**
- *
  * @author acer
  */
 public interface CategoryRepository {
     List<Category> getCates();
+
     Category getCategoryById(int id);
+
     Category addOrUpdateCategory(Category category);
+
     void deleteCategory(int id);
 }

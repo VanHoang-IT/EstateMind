@@ -4,7 +4,6 @@
  */
 package com.hvh.service.impl;
 
-import com.hvh.dto.UpdateVerificationProfileDTO;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.hvh.dto.CustomerVerificationResponseDTO;
@@ -13,6 +12,7 @@ import com.hvh.dto.LoginResponseDTO;
 import com.hvh.dto.RegisterRequestDTO;
 import com.hvh.dto.SellerVerificationResponseDTO;
 import com.hvh.dto.UpdateProfileDTO;
+import com.hvh.dto.UpdateVerificationProfileDTO;
 import com.hvh.dto.UserProfileResponseDTO;
 import com.hvh.dto.VerificationProfileResponseDTO;
 import com.hvh.pojo.Company;
@@ -43,27 +43,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-
-
 /**
- *
  * @author acer
  */
 @Service("userDetailsService")
 public class UserServiceImpl implements UserService {
 
-    private static final Set<String> ALLOWED_ROLES =
-            Set.of(
-                    "ROLE_ADMIN",
-                    "ROLE_CUSTOMER",
-                    "ROLE_SELLER"
-            );
+    private static final Set<String> ALLOWED_ROLES
+            = Set.of("ROLE_ADMIN", "ROLE_CUSTOMER", "ROLE_SELLER");
 
-    private static final Set<String> REGISTERABLE_ROLES =
-            Set.of(
-                    "ROLE_CUSTOMER",
-                    "ROLE_SELLER"
-            );
+    private static final Set<String> REGISTERABLE_ROLES = Set.of("ROLE_CUSTOMER", "ROLE_SELLER");
 
     @Autowired
     private UserRepository userRepo;
@@ -93,9 +82,7 @@ public class UserServiceImpl implements UserService {
 
         if (user == null) {
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Không tìm thấy người dùng với id " + id
-            );
+                    HttpStatus.NOT_FOUND, "Không tìm thấy người dùng với id " + id);
         }
 
         return user;
@@ -103,51 +90,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserProfileResponseDTO register(
-            RegisterRequestDTO request,
-            MultipartFile avatar) {
+    public UserProfileResponseDTO register(RegisterRequestDTO request, MultipartFile avatar) {
 
         String username = request.getUsername().trim();
 
-        Users existingUser =
-                this.userRepo.getUserByUsername(username);
+        Users existingUser = this.userRepo.getUserByUsername(username);
 
         if (existingUser != null) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Tên đăng nhập đã tồn tại"
-            );
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tên đăng nhập đã tồn tại");
         }
 
-        String role = normalizeRegisterRole(
-                request.getRole()
-        );
+        String role = normalizeRegisterRole(request.getRole());
 
         Users user = new Users();
 
-        user.setFirstName(
-                request.getFirstName().trim()
-        );
+        user.setFirstName(request.getFirstName().trim());
 
-        user.setLastName(
-                request.getLastName().trim()
-        );
+        user.setLastName(request.getLastName().trim());
 
-        user.setPhone(
-                request.getPhone().trim()
-        );
+        user.setPhone(request.getPhone().trim());
 
-        user.setEmail(
-                request.getEmail().trim()
-        );
+        user.setEmail(request.getEmail().trim());
 
         user.setUsername(username);
 
-        user.setPassword(
-                this.passwordEncoder.encode(
-                        request.getPassword()
-                )
-        );
+        user.setPassword(this.passwordEncoder.encode(request.getPassword()));
 
         user.setUserRole(role);
         user.setActive(true);
@@ -156,15 +123,12 @@ public class UserServiceImpl implements UserService {
             user.setAvatar(uploadAvatar(avatar));
         }
 
-        Users savedUser =
-                this.userRepo.addUser(user);
+        Users savedUser = this.userRepo.addUser(user);
 
         if ("ROLE_SELLER".equals(role)) {
-            this.sellerProfileService
-                    .createProfileForUser(savedUser);
+            this.sellerProfileService.createProfileForUser(savedUser);
         } else {
-            this.customerProfileService
-                    .createProfileForUser(savedUser);
+            this.customerProfileService.createProfileForUser(savedUser);
         }
 
         return toUserProfileDTO(savedUser);
@@ -172,60 +136,44 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public LoginResponseDTO login(
-            LoginRequestDTO request) {
+    public LoginResponseDTO login(LoginRequestDTO request) {
 
-        boolean authenticated =
-                this.userRepo.authenticate(
-                        request.getUsername(),
-                        request.getPassword()
-                );
+        boolean authenticated
+                = this.userRepo.authenticate(request.getUsername(), request.getPassword());
 
         if (!authenticated) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "Sai thông tin đăng nhập"
-            );
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sai thông tin đăng nhập");
         }
 
         try {
-            String token = JwtUtils.generateToken(
-                    request.getUsername()
-            );
+            String token = JwtUtils.generateToken(request.getUsername());
 
             return new LoginResponseDTO(token);
 
         } catch (Exception ex) {
             throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Không thể tạo JWT",
-                    ex
-            );
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tạo JWT", ex);
         }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserProfileResponseDTO getUserProfile(
-            String username) {
+    public UserProfileResponseDTO getUserProfile(String username) {
 
-        return toUserProfileDTO(
-                requireUserForApi(username)
-        );
+        return toUserProfileDTO(requireUserForApi(username));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public VerificationProfileResponseDTO<?>
-            getVerificationProfile(String username) {
+    public VerificationProfileResponseDTO<?> getVerificationProfile(
+            String username) {
 
         Users user = requireUserForApi(username);
 
-        if ("ROLE_CUSTOMER".equals(
-                user.getUserRole())) {
+        if ("ROLE_CUSTOMER".equals(user.getUserRole())) {
 
-            CustomerProfile profile =
-                    this.customerProfileService
+            CustomerProfile profile
+                    = this.customerProfileService
                             .getByUserId(user.getId());
 
             if (profile == null) {
@@ -235,8 +183,8 @@ public class UserServiceImpl implements UserService {
                 );
             }
 
-            CustomerVerificationResponseDTO dto =
-                    new CustomerVerificationResponseDTO(
+            CustomerVerificationResponseDTO dto
+                    = new CustomerVerificationResponseDTO(
                             profile.getId(),
                             profile.getAddress(),
                             profile.getIdentityNumber(),
@@ -251,11 +199,10 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        if ("ROLE_SELLER".equals(
-                user.getUserRole())) {
+        if ("ROLE_SELLER".equals(user.getUserRole())) {
 
-            SellerProfile profile =
-                    this.sellerProfileService
+            SellerProfile profile
+                    = this.sellerProfileService
                             .getByUserId(user.getId());
 
             if (profile == null) {
@@ -265,10 +212,11 @@ public class UserServiceImpl implements UserService {
                 );
             }
 
-            Company company = profile.getCompanyId();
+            Company company
+                    = profile.getCompanyId();
 
-            SellerVerificationResponseDTO dto =
-                    new SellerVerificationResponseDTO(
+            SellerVerificationResponseDTO dto
+                    = new SellerVerificationResponseDTO(
                             profile.getId(),
                             profile.getBio(),
                             profile.getIsVerified(),
@@ -301,21 +249,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(
-            String username)
-            throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Users user =
-                requireUserForSecurity(username);
+        Users user = requireUserForSecurity(username);
 
-        Set<GrantedAuthority> authorities =
-                new HashSet<>();
+        Set<GrantedAuthority> authorities = new HashSet<>();
 
-        authorities.add(
-                new SimpleGrantedAuthority(
-                        user.getUserRole()
-                )
-        );
+        authorities.add(new SimpleGrantedAuthority(user.getUserRole()));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
@@ -324,20 +264,14 @@ public class UserServiceImpl implements UserService {
                 true,
                 true,
                 true,
-                authorities
-        );
+                authorities);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean authenticate(
-            String username,
-            String password) {
+    public boolean authenticate(String username, String password) {
 
-        return this.userRepo.authenticate(
-                username,
-                password
-        );
+        return this.userRepo.authenticate(username, password);
     }
 
     @Override
@@ -350,69 +284,46 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public Users updateRole(int id, String role) {
 
-        if (role == null
-                || !ALLOWED_ROLES.contains(role)) {
+        if (role == null || !ALLOWED_ROLES.contains(role)) {
 
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Role không hợp lệ, chỉ chấp nhận: "
-                    + ALLOWED_ROLES
-            );
+                    HttpStatus.BAD_REQUEST, "Role không hợp lệ, chỉ chấp nhận: " + ALLOWED_ROLES);
         }
 
         return this.userRepo.updateRole(id, role);
     }
 
-    private Users requireUserForApi(
-            String username) {
+    private Users requireUserForApi(String username) {
 
-        Users user =
-                this.userRepo.getUserByUsername(
-                        username
-                );
+        Users user = this.userRepo.getUserByUsername(username);
 
         if (user == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Không tìm thấy tài khoản"
-            );
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
         }
 
         return user;
     }
 
-    private Users requireUserForSecurity(
-            String username) {
+    private Users requireUserForSecurity(String username) {
 
-        Users user =
-                this.userRepo.getUserByUsername(
-                        username
-                );
+        Users user = this.userRepo.getUserByUsername(username);
 
         if (user == null) {
-            throw new UsernameNotFoundException(
-                    "Không tìm thấy tài khoản"
-            );
+            throw new UsernameNotFoundException("Không tìm thấy tài khoản");
         }
 
         return user;
     }
 
-    private String normalizeRegisterRole(
-            String requestedRole) {
+    private String normalizeRegisterRole(String requestedRole) {
 
-        if (requestedRole == null
-                || requestedRole.isBlank()) {
+        if (requestedRole == null || requestedRole.isBlank()) {
 
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Vai trò không được để trống"
-            );
+                    HttpStatus.BAD_REQUEST, "Vai trò không được để trống");
         }
 
-        String normalized = requestedRole
-                .trim()
-                .toUpperCase(Locale.ROOT);
+        String normalized = requestedRole.trim().toUpperCase(Locale.ROOT);
 
         if (!normalized.startsWith("ROLE_")) {
             normalized = "ROLE_" + normalized;
@@ -421,20 +332,17 @@ public class UserServiceImpl implements UserService {
         if (!REGISTERABLE_ROLES.contains(normalized)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Chỉ được đăng ký với vai trò "
-                    + "CUSTOMER hoặc SELLER"
-            );
+                    "Chỉ được đăng ký với vai trò " + "CUSTOMER hoặc SELLER");
         }
 
         return normalized;
     }
 
-    private String uploadAvatar(
-            MultipartFile avatar) {
+    private String uploadAvatar(MultipartFile avatar) {
 
         try {
-            Map<?, ?> result =
-                    this.cloudinary
+            Map<?, ?> result
+                    = this.cloudinary
                             .uploader()
                             .upload(
                                     avatar.getBytes(),
@@ -442,33 +350,24 @@ public class UserServiceImpl implements UserService {
                                             "resource_type",
                                             "image",
                                             "folder",
-                                            "estatemind/avatars"
-                                    )
-                            );
+                                            "estatemind/avatars"));
 
-            Object secureUrl =
-                    result.get("secure_url");
+            Object secureUrl = result.get("secure_url");
 
             if (secureUrl == null) {
                 throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Cloudinary không trả về URL ảnh"
-                );
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Cloudinary không trả về URL ảnh");
             }
 
             return secureUrl.toString();
 
         } catch (IOException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Không thể tải ảnh đại diện",
-                    ex
-            );
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tải ảnh đại diện", ex);
         }
     }
 
-    private UserProfileResponseDTO toUserProfileDTO(
-            Users user) {
+    private UserProfileResponseDTO toUserProfileDTO(Users user) {
 
         return new UserProfileResponseDTO(
                 user.getId(),
@@ -479,46 +378,38 @@ public class UserServiceImpl implements UserService {
                 user.getUsername(),
                 user.getActive(),
                 user.getUserRole(),
-                user.getAvatar()
-        );
+                user.getAvatar());
     }
+
     @Override
     @Transactional
     public VerificationProfileResponseDTO<?> updateVerificationProfile(
-            String username,
-            UpdateVerificationProfileDTO request) {
+            String username, UpdateVerificationProfileDTO request) {
 
         Users user = requireUserForApi(username);
 
         if ("ROLE_CUSTOMER".equals(user.getUserRole())) {
 
-            CustomerProfile profile =
-                    this.customerProfileService
-                            .getByUserId(user.getId());
+            CustomerProfile profile = this.customerProfileService.getByUserId(user.getId());
 
             if (profile == null) {
                 throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Tài khoản chưa có customer_profile"
-                );
+                        HttpStatus.NOT_FOUND, "Tài khoản chưa có customer_profile");
             }
 
             if (request.getAddress() != null) {
                 profile.setAddress(
-                        request.getAddress().isBlank()
-                                ? null
-                                : request.getAddress().trim()
-                );
+                        request.getAddress().isBlank() ? null : request.getAddress().trim());
             }
 
             if (request.getIdentityNumber() != null) {
-                String newIdentity =
-                        request.getIdentityNumber().isBlank()
-                                ? null
-                                : request.getIdentityNumber().trim();
+                String newIdentity
+                        = request.getIdentityNumber().isBlank()
+                        ? null
+                        : request.getIdentityNumber().trim();
 
-                boolean changed =
-                        newIdentity == null
+                boolean changed
+                        = newIdentity == null
                                 ? profile.getIdentityNumber() != null
                                 : !newIdentity.equals(profile.getIdentityNumber());
 
@@ -537,23 +428,15 @@ public class UserServiceImpl implements UserService {
 
         if ("ROLE_SELLER".equals(user.getUserRole())) {
 
-            SellerProfile profile =
-                    this.sellerProfileService
-                            .getByUserId(user.getId());
+            SellerProfile profile = this.sellerProfileService.getByUserId(user.getId());
 
             if (profile == null) {
                 throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Tài khoản chưa có seller_profile"
-                );
+                        HttpStatus.NOT_FOUND, "Tài khoản chưa có seller_profile");
             }
 
             if (request.getBio() != null) {
-                profile.setBio(
-                        request.getBio().isBlank()
-                                ? null
-                                : request.getBio().trim()
-                );
+                profile.setBio(request.getBio().isBlank() ? null : request.getBio().trim());
             }
 
             if (request.getCompanyId() != null) {
@@ -571,9 +454,7 @@ public class UserServiceImpl implements UserService {
 
         throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Vai trò " + user.getUserRole()
-                + " không hỗ trợ hồ sơ xác minh"
-        );
+                "Vai trò " + user.getUserRole() + " không hỗ trợ hồ sơ xác minh");
     }
 
     @Override
@@ -584,15 +465,11 @@ public class UserServiceImpl implements UserService {
 
         if ("ROLE_CUSTOMER".equals(user.getUserRole())) {
 
-            CustomerProfile profile =
-                    this.customerProfileService
-                            .getByUserId(user.getId());
+            CustomerProfile profile = this.customerProfileService.getByUserId(user.getId());
 
             if (profile == null) {
                 throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Tài khoản chưa có customer_profile"
-                );
+                        HttpStatus.NOT_FOUND, "Tài khoản chưa có customer_profile");
             }
 
             if (profile.getAddress() == null
@@ -601,9 +478,7 @@ public class UserServiceImpl implements UserService {
                     || profile.getIdentityNumber().isBlank()) {
 
                 throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Hồ sơ chưa đủ địa chỉ và số giấy tờ định danh"
-                );
+                        HttpStatus.BAD_REQUEST, "Hồ sơ chưa đủ địa chỉ và số giấy tờ định danh");
             }
 
             profile.setIdentityVerified(true);
@@ -615,15 +490,11 @@ public class UserServiceImpl implements UserService {
 
         if ("ROLE_SELLER".equals(user.getUserRole())) {
 
-            SellerProfile profile =
-                    this.sellerProfileService
-                            .getByUserId(user.getId());
+            SellerProfile profile = this.sellerProfileService.getByUserId(user.getId());
 
             if (profile == null) {
                 throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Tài khoản chưa có seller_profile"
-                );
+                        HttpStatus.NOT_FOUND, "Tài khoản chưa có seller_profile");
             }
 
             profile.setIsVerified(true);
@@ -635,37 +506,29 @@ public class UserServiceImpl implements UserService {
         }
 
         throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Vai trò " + user.getUserRole()
-                + " không hỗ trợ xác minh"
-        );
+                HttpStatus.BAD_REQUEST, "Vai trò " + user.getUserRole() + " không hỗ trợ xác minh");
     }
+
     @Override
     @Transactional
     public UserProfileResponseDTO updateProfile(
-            String username,
-            UpdateProfileDTO request,
-            MultipartFile avatar) {
+            String username, UpdateProfileDTO request, MultipartFile avatar) {
 
         Users user = requireUserForApi(username);
 
-        if (request.getFirstName() != null
-                && !request.getFirstName().isBlank()) {
+        if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
             user.setFirstName(request.getFirstName().trim());
         }
 
-        if (request.getLastName() != null
-                && !request.getLastName().isBlank()) {
+        if (request.getLastName() != null && !request.getLastName().isBlank()) {
             user.setLastName(request.getLastName().trim());
         }
 
-        if (request.getPhone() != null
-                && !request.getPhone().isBlank()) {
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
             user.setPhone(request.getPhone().trim());
         }
 
-        if (request.getEmail() != null
-                && !request.getEmail().isBlank()) {
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
             user.setEmail(request.getEmail().trim());
         }
 

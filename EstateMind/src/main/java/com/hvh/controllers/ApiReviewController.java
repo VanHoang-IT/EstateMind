@@ -15,9 +15,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 /**
- *
  * @author acer
  */
 @RestController
@@ -33,7 +40,8 @@ public class ApiReviewController {
 
     @GetMapping("/properties/{propertyId}/reviews")
     public ResponseEntity<List<Review>> byProperty(@PathVariable("propertyId") Integer propertyId) {
-        return new ResponseEntity<>(this.reviewService.getReviewsByPropertyId(propertyId), HttpStatus.OK);
+        return new ResponseEntity<>(
+                this.reviewService.getReviewsByPropertyId(propertyId), HttpStatus.OK);
     }
 
     @PostMapping("/secure/reviews")
@@ -52,7 +60,8 @@ public class ApiReviewController {
 
     @DeleteMapping("/secure/reviews/{reviewId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> delete(@PathVariable("reviewId") Integer reviewId, Authentication auth) {
+    public ResponseEntity<?> delete(
+            @PathVariable("reviewId") Integer reviewId, Authentication auth) {
         try {
             Users currentUser = this.userService.getUserByUsername(auth.getName());
             this.reviewService.deleteReview(reviewId, currentUser);
@@ -62,5 +71,3 @@ public class ApiReviewController {
         }
     }
 }
-
-

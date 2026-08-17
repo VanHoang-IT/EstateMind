@@ -7,14 +7,12 @@ package com.hvh.configs;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.ViewResolver;
+import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
-
 
 /**
- *
  * @author acer
  */
 @Configuration
@@ -27,7 +25,7 @@ public class ThymeleafConfigs {
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode("HTML");
         templateResolver.setCharacterEncoding("UTF-8");
-        
+
         return templateResolver;
     }
 
@@ -44,7 +42,7 @@ public class ThymeleafConfigs {
         ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
         viewResolver.setTemplateEngine(templateEngine());
         viewResolver.setCharacterEncoding("UTF-8");
-        
+
         return viewResolver;
     }
 }

@@ -24,7 +24,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -32,50 +31,77 @@ import java.util.Date;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "SellerProfile.findAll", query = "SELECT s FROM SellerProfile s"),
-    @NamedQuery(name = "SellerProfile.findById", query = "SELECT s FROM SellerProfile s WHERE s.id = :id"),
-    @NamedQuery(name = "SellerProfile.findByBio", query = "SELECT s FROM SellerProfile s WHERE s.bio = :bio"),
-    @NamedQuery(name = "SellerProfile.findByIsVerified", query = "SELECT s FROM SellerProfile s WHERE s.isVerified = :isVerified"),
-    @NamedQuery(name = "SellerProfile.findByVerifiedAt", query = "SELECT s FROM SellerProfile s WHERE s.verifiedAt = :verifiedAt"),
-    @NamedQuery(name = "SellerProfile.findByRatingAvg", query = "SELECT s FROM SellerProfile s WHERE s.ratingAvg = :ratingAvg"),
-    @NamedQuery(name = "SellerProfile.findByTotalProperties", query = "SELECT s FROM SellerProfile s WHERE s.totalProperties = :totalProperties"),
-    @NamedQuery(name = "SellerProfile.findByCreatedAt", query = "SELECT s FROM SellerProfile s WHERE s.createdAt = :createdAt"),
-    @NamedQuery(name = "SellerProfile.findByUpdatedAt", query = "SELECT s FROM SellerProfile s WHERE s.updatedAt = :updatedAt")})
+    @NamedQuery(
+            name = "SellerProfile.findById",
+            query = "SELECT s FROM SellerProfile s WHERE s.id = :id"),
+    @NamedQuery(
+            name = "SellerProfile.findByBio",
+            query = "SELECT s FROM SellerProfile s WHERE s.bio = :bio"),
+    @NamedQuery(
+            name = "SellerProfile.findByIsVerified",
+            query = "SELECT s FROM SellerProfile s WHERE s.isVerified = :isVerified"),
+    @NamedQuery(
+            name = "SellerProfile.findByVerifiedAt",
+            query = "SELECT s FROM SellerProfile s WHERE s.verifiedAt = :verifiedAt"),
+    @NamedQuery(
+            name = "SellerProfile.findByRatingAvg",
+            query = "SELECT s FROM SellerProfile s WHERE s.ratingAvg = :ratingAvg"),
+    @NamedQuery(
+            name = "SellerProfile.findByTotalProperties",
+            query = "SELECT s FROM SellerProfile s WHERE s.totalProperties = :totalProperties"),
+    @NamedQuery(
+            name = "SellerProfile.findByCreatedAt",
+            query = "SELECT s FROM SellerProfile s WHERE s.createdAt = :createdAt"),
+    @NamedQuery(
+            name = "SellerProfile.findByUpdatedAt",
+            query = "SELECT s FROM SellerProfile s WHERE s.updatedAt = :updatedAt")
+})
 public class SellerProfile implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @Basic(optional = false)
     @NotNull
     @Column(name = "id")
     private Integer id;
+
     @Size(max = 2147483647)
     @Column(name = "bio")
     private String bio;
+
     @Column(name = "is_verified")
     private Boolean isVerified;
+
     @Column(name = "verified_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedAt;
-    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
+
+    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these
+    // annotations to enforce field validation
     @Column(name = "rating_avg")
     private BigDecimal ratingAvg;
+
     @Column(name = "total_properties")
     private Integer totalProperties;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+
     @JoinColumn(name = "company_id", referencedColumnName = "id")
     @ManyToOne
     private Company companyId;
+
     @JoinColumn(name = "id", referencedColumnName = "id", insertable = false, updatable = false)
     @OneToOne(optional = false)
     private Users users;
 
-    public SellerProfile() {
-    }
+    public SellerProfile() {}
 
     public SellerProfile(Integer id) {
         this.id = id;
@@ -175,7 +201,8 @@ public class SellerProfile implements Serializable {
             return false;
         }
         SellerProfile other = (SellerProfile) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -185,5 +212,4 @@ public class SellerProfile implements Serializable {
     public String toString() {
         return "com.hvh.pojo.SellerProfile[ id=" + id + " ]";
     }
-    
 }

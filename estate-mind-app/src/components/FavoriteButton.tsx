@@ -1,52 +1,160 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+import { Heart } from "lucide-react";
+
 import { useAuth } from "@/contexts/AuthContext";
+
 import { favoriteService } from "@/services/favoriteService";
 
+interface FavoriteSnapshot {
+  userKey: string;
+  propertyId: number;
+  value: boolean;
+}
+
 export default function FavoriteButton({ propertyId }: { propertyId: number }) {
-  const { user } = useAuth();
-  const [favorited, setFavorited] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+
+  const [favoriteSnapshot, setFavoriteSnapshot] =
+    useState<FavoriteSnapshot | null>(null);
+
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    favoriteService.isFavorited(propertyId).then(setFavorited).catch(() => {});
-  }, [user, propertyId]);
+  const userKey = user?.username ?? "";
 
-  async function toggle() {
-    if (!user || busy) return;
+  const canUseFavorites =
+    user?.userRole === "ROLE_CUSTOMER" || user?.userRole === "ROLE_SELLER";
+
+  const favorited =
+    Boolean(userKey) &&
+    canUseFavorites &&
+    favoriteSnapshot?.userKey === userKey &&
+    favoriteSnapshot?.propertyId === propertyId &&
+    favoriteSnapshot.value;
+
+  useEffect(() => {
+    if (authLoading || !userKey || !canUseFavorites) {
+      return;
+    }
+
+    let ignore = false;
+
+    favoriteService
+      .isFavorited(propertyId)
+      .then((value) => {
+        if (ignore) {
+          return;
+        }
+
+        setFavoriteSnapshot({
+          userKey,
+          propertyId,
+          value,
+        });
+      })
+      .catch((error) => {
+        console.error("Không thể kiểm tra trạng thái yêu thích:", error);
+
+        if (ignore) {
+          return;
+        }
+
+        setFavoriteSnapshot({
+          userKey,
+          propertyId,
+          value: false,
+        });
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [authLoading, userKey, canUseFavorites, propertyId]);
+
+  async function toggleFavorite() {
+    if (!user || !canUseFavorites || busy) {
+      return;
+    }
+
     setBusy(true);
+
     try {
       if (favorited) {
         await favoriteService.removeFavorite(propertyId);
-        setFavorited(false);
-      } else {
-        await favoriteService.addFavorite(propertyId);
-        setFavorited(true);
+
+        setFavoriteSnapshot({
+          userKey,
+          propertyId,
+          value: false,
+        });
+
+        return;
       }
-    } catch {
-      // bỏ qua
+
+      await favoriteService.addFavorite(propertyId);
+
+      setFavoriteSnapshot({
+        userKey,
+        propertyId,
+        value: true,
+      });
+    } catch (error) {
+      console.error("Không thể thay đổi trạng thái yêu thích:", error);
     } finally {
       setBusy(false);
     }
   }
 
+  if (authLoading) {
+    return (
+      <div
+        aria-hidden="true"
+        className="
+          h-11
+          w-11
+          rounded-full
+          border
+          border-[#e0e6e2]
+          bg-white
+        "
+      />
+    );
+  }
+  if (!user || !canUseFavorites) {
+    return null;
+  }
+
   return (
     <button
-      onClick={toggle}
-      disabled={!user || busy}
-      className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-        favorited
-          ? "text-red-600 border-red-200 bg-red-50"
-          : "text-gray-600 border-gray-300 hover:border-red-300 hover:text-red-500"
-      }`}
-      title={user ? undefined : "Đăng nhập để lưu tin"}
+      type="button"
+      onClick={toggleFavorite}
+      disabled={busy}
+      aria-label={
+        favorited ? "Xóa khỏi danh sách yêu thích" : "Lưu bất động sản"
+      }
+      title={favorited ? "Xóa khỏi danh sách yêu thích" : "Lưu bất động sản"}
+      className="
+        grid
+        h-11
+        w-11
+        place-items-center
+        rounded-full
+        border
+        border-[#d8e0dc]
+        bg-white
+        text-[#58645e]
+        transition
+
+        hover:border-brand
+        hover:text-brand
+
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
     >
-      <svg className="w-4 h-4" fill={favorited ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-      </svg>
-      {favorited ? "Đã lưu" : "Lưu tin"}
+      <Heart size={19} className={favorited ? "fill-brand text-brand" : ""} />
     </button>
   );
 }

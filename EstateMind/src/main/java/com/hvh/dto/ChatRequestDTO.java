@@ -5,16 +5,15 @@
 package com.hvh.dto;
 
 /**
- *
  * @author acer
  */
 public class ChatRequestDTO {
 
     private String question;
+
     private Integer sessionId;
 
-    public ChatRequestDTO() {
-    }
+    public ChatRequestDTO() {}
 
     public ChatRequestDTO(String question, Integer sessionId) {
         this.question = question;

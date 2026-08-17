@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -33,37 +32,49 @@ import java.util.Date;
 @NamedQueries({
     @NamedQuery(name = "History.findAll", query = "SELECT h FROM History h"),
     @NamedQuery(name = "History.findById", query = "SELECT h FROM History h WHERE h.id = :id"),
-    @NamedQuery(name = "History.findByAction", query = "SELECT h FROM History h WHERE h.action = :action"),
-    @NamedQuery(name = "History.findByNote", query = "SELECT h FROM History h WHERE h.note = :note"),
-    @NamedQuery(name = "History.findByCreatedAt", query = "SELECT h FROM History h WHERE h.createdAt = :createdAt")})
+    @NamedQuery(
+            name = "History.findByAction",
+            query = "SELECT h FROM History h WHERE h.action = :action"),
+    @NamedQuery(
+            name = "History.findByNote",
+            query = "SELECT h FROM History h WHERE h.note = :note"),
+    @NamedQuery(
+            name = "History.findByCreatedAt",
+            query = "SELECT h FROM History h WHERE h.createdAt = :createdAt")
+})
 public class History implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 100)
     @Column(name = "action")
     private String action;
+
     @Size(max = 2147483647)
     @Column(name = "note")
     private String note;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
     @JoinColumn(name = "property_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Property propertyId;
+
     @JoinColumn(name = "actor_id", referencedColumnName = "id")
     @ManyToOne
     private Users actorId;
 
-    public History() {
-    }
+    public History() {}
 
     public History(Integer id) {
         this.id = id;
@@ -136,7 +147,8 @@ public class History implements Serializable {
             return false;
         }
         History other = (History) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -146,5 +158,4 @@ public class History implements Serializable {
     public String toString() {
         return "com.hvh.pojo.History[ id=" + id + " ]";
     }
-    
 }

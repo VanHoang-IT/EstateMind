@@ -12,9 +12,7 @@ function getCurrentTheme(): Theme {
     return "light";
   }
 
-  return document.documentElement.classList.contains("dark")
-    ? "dark"
-    : "light";
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
 function getServerTheme(): Theme {
@@ -30,15 +28,8 @@ function subscribe(callback: () => void) {
   window.addEventListener("storage", handleChange);
 
   return () => {
-    window.removeEventListener(
-      THEME_CHANGE_EVENT,
-      handleChange
-    );
-
-    window.removeEventListener(
-      "storage",
-      handleChange
-    );
+    window.removeEventListener(THEME_CHANGE_EVENT, handleChange);
+    window.removeEventListener("storage", handleChange);
   };
 }
 
@@ -49,21 +40,16 @@ function applyTheme(theme: Theme) {
   root.classList.toggle("dark", isDark);
   root.style.colorScheme = theme;
 
-  localStorage.setItem(
-    THEME_STORAGE_KEY,
-    theme
-  );
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
 
-  window.dispatchEvent(
-    new Event(THEME_CHANGE_EVENT)
-  );
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
 }
 
 export default function ThemeToggle() {
   const theme = useSyncExternalStore(
     subscribe,
     getCurrentTheme,
-    getServerTheme
+    getServerTheme,
   );
 
   const isDark = theme === "dark";
@@ -76,16 +62,8 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      title={
-        isDark
-          ? "Chuyển sang chế độ sáng"
-          : "Chuyển sang chế độ tối"
-      }
-      aria-label={
-        isDark
-          ? "Chuyển sang chế độ sáng"
-          : "Chuyển sang chế độ tối"
-      }
+      title={isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+      aria-label={isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
       aria-pressed={isDark}
       className="
         inline-flex h-9 w-9 items-center justify-center
@@ -108,12 +86,7 @@ export default function ThemeToggle() {
           stroke="currentColor"
           aria-hidden="true"
         >
-          <circle
-            cx="12"
-            cy="12"
-            r="4"
-            strokeWidth="1.8"
-          />
+          <circle cx="12" cy="12" r="4" strokeWidth="1.8" />
 
           <path
             strokeLinecap="round"

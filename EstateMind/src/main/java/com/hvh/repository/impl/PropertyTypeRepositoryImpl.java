@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
 /**
- *
  * @author acer
  */
 @Repository
@@ -28,9 +28,8 @@ public class PropertyTypeRepositoryImpl implements PropertyTypeRepository {
     public List<PropertyType> getPropertyTypes() {
         Session session = this.factory.getObject().getCurrentSession();
 
-        Query<PropertyType> query = session.createQuery(
-                "FROM PropertyType ORDER BY name",
-                PropertyType.class);
+        Query<PropertyType> query =
+                session.createQuery("FROM PropertyType ORDER BY name", PropertyType.class);
 
         return query.getResultList();
     }

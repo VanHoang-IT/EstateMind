@@ -5,8 +5,10 @@
 package com.hvh.pojo;
 
 import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +17,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -24,6 +27,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Set;
 
 /**
  *
@@ -51,7 +55,14 @@ import java.util.Date;
     @NamedQuery(name = "Property.findByCrawlDate", query = "SELECT p FROM Property p WHERE p.crawlDate = :crawlDate"),
     @NamedQuery(name = "Property.findByLegalVerified", query = "SELECT p FROM Property p WHERE p.legalVerified = :legalVerified"),
     @NamedQuery(name = "Property.findByUrlCrawl", query = "SELECT p FROM Property p WHERE p.urlCrawl = :urlCrawl"),
-    @NamedQuery(name = "Property.findByMainImage", query = "SELECT p FROM Property p WHERE p.mainImage = :mainImage")})
+    @NamedQuery(name = "Property.findByMainImage", query = "SELECT p FROM Property p WHERE p.mainImage = :mainImage"),
+    @NamedQuery(name = "Property.findByModerationStatus", query = "SELECT p FROM Property p WHERE p.moderationStatus = :moderationStatus"),
+    @NamedQuery(name = "Property.findByRejectionReason", query = "SELECT p FROM Property p WHERE p.rejectionReason = :rejectionReason"),
+    @NamedQuery(name = "Property.findByPredictedPrice", query = "SELECT p FROM Property p WHERE p.predictedPrice = :predictedPrice"),
+    @NamedQuery(name = "Property.findByMindScore", query = "SELECT p FROM Property p WHERE p.mindScore = :mindScore"),
+    @NamedQuery(name = "Property.findByScoredAt", query = "SELECT p FROM Property p WHERE p.scoredAt = :scoredAt"),
+    @NamedQuery(name = "Property.findByAmenities", query = "SELECT p FROM Property p WHERE p.amenities = :amenities"),
+    @NamedQuery(name = "Property.findByAttributes", query = "SELECT p FROM Property p WHERE p.attributes = :attributes")})
 public class Property implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -74,8 +85,6 @@ public class Property implements Serializable {
     @Column(name = "address")
     private String address;
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
-    @Basic(optional = false)
-    @NotNull
     @Column(name = "price")
     private BigDecimal price;
     @Column(name = "area")
@@ -115,12 +124,38 @@ public class Property implements Serializable {
     @Size(max = 255)
     @Column(name = "main_image")
     private String mainImage;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 20)
+    @Column(name = "moderation_status")
+    private String moderationStatus;
+    @Size(max = 1000)
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+    @Column(name = "predicted_price")
+    private BigDecimal predictedPrice;
+    @Column(name = "mind_score")
+    private Integer mindScore;
+    @Column(name = "scored_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date scoredAt;
+    @Size(max = 2147483647)
+    @Column(name = "amenities")
+    private String amenities;
+    @Size(max = 2147483647)
+    @Column(name = "attributes")
+    private String attributes;
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @ManyToOne
     private Category categoryId;
+    
     @JoinColumn(name = "seller_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Users sellerId;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyId", fetch = FetchType.EAGER)
+    private Set<PropertyImages> propertyImagesSet;
+    
 
     public Property() {
     }
@@ -129,11 +164,11 @@ public class Property implements Serializable {
         this.id = id;
     }
 
-    public Property(Integer id, String title, String address, BigDecimal price) {
+    public Property(Integer id, String title, String address, String moderationStatus) {
         this.id = id;
         this.title = title;
         this.address = address;
-        this.price = price;
+        this.moderationStatus = moderationStatus;
     }
 
     public Integer getId() {
@@ -288,6 +323,62 @@ public class Property implements Serializable {
         this.mainImage = mainImage;
     }
 
+    public String getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public void setModerationStatus(String moderationStatus) {
+        this.moderationStatus = moderationStatus;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public BigDecimal getPredictedPrice() {
+        return predictedPrice;
+    }
+
+    public void setPredictedPrice(BigDecimal predictedPrice) {
+        this.predictedPrice = predictedPrice;
+    }
+
+    public Integer getMindScore() {
+        return mindScore;
+    }
+
+    public void setMindScore(Integer mindScore) {
+        this.mindScore = mindScore;
+    }
+
+    public Date getScoredAt() {
+        return scoredAt;
+    }
+
+    public void setScoredAt(Date scoredAt) {
+        this.scoredAt = scoredAt;
+    }
+
+    public String getAmenities() {
+        return amenities;
+    }
+
+    public void setAmenities(String amenities) {
+        this.amenities = amenities;
+    }
+
+    public String getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(String attributes) {
+        this.attributes = attributes;
+    }
+
     public Category getCategoryId() {
         return categoryId;
     }
@@ -302,6 +393,14 @@ public class Property implements Serializable {
 
     public void setSellerId(Users sellerId) {
         this.sellerId = sellerId;
+    }
+    
+    public Set<PropertyImages> getPropertyImagesSet() {
+        return propertyImagesSet;
+    }
+
+    public void setPropertyImagesSet(Set<PropertyImages> propertyImagesSet) {
+        this.propertyImagesSet = propertyImagesSet;
     }
 
     @Override

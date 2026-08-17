@@ -14,8 +14,8 @@ import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
 /**
- *
  * @author acer
  */
 @Repository
@@ -28,9 +28,10 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     @Override
     public List<Favorites> getByUser(int userId) {
         Session session = sessionFactory.getCurrentSession();
-        Query<Favorites> q = session.createQuery(
-                "FROM Favorites f WHERE f.userId.id = :userId ORDER BY f.createdDate DESC",
-                Favorites.class);
+        Query<Favorites> q =
+                session.createQuery(
+                        "FROM Favorites f WHERE f.userId.id = :userId ORDER BY f.createdDate DESC",
+                        Favorites.class);
         q.setParameter("userId", userId);
         return q.getResultList();
     }
@@ -38,9 +39,11 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     @Override
     public Favorites find(int userId, int propertyId) {
         Session session = sessionFactory.getCurrentSession();
-        Query<Favorites> q = session.createQuery(
-                "FROM Favorites f WHERE f.userId.id = :userId AND f.propertyId.id = :propertyId",
-                Favorites.class);
+        Query<Favorites> q =
+                session.createQuery(
+                        "FROM Favorites f WHERE f.userId.id = :userId AND f.propertyId.id ="
+                                + " :propertyId",
+                        Favorites.class);
         q.setParameter("userId", userId);
         q.setParameter("propertyId", propertyId);
         return q.getResultStream().findFirst().orElse(null);

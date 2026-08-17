@@ -4,7 +4,9 @@
  */
 package com.hvh.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,11 +14,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  *
@@ -75,6 +80,7 @@ public class Users implements Serializable {
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 255)
+    @JsonIgnore
     @Column(name = "password")
     private String password;
     @Column(name = "active")
@@ -87,6 +93,9 @@ public class Users implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "avatar")
     private String avatar;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerId")
+    private Set<Property> propertySet;
 
     public Users() {
     }
@@ -184,6 +193,15 @@ public class Users implements Serializable {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    @XmlTransient
+    public Set<Property> getPropertySet() {
+        return propertySet;
+    }
+
+    public void setPropertySet(Set<Property> propertySet) {
+        this.propertySet = propertySet;
     }
 
     @Override

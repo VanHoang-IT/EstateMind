@@ -1,37 +1,68 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
-
-@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  color-scheme: light;
-}
+  --background: #f7f8f7;
+  --foreground: #202523;
 
-html.dark {
-  --background: #020617;
-  --foreground: #e2e8f0;
-  color-scheme: dark;
+  --brand: #007a5a;
+  --brand-hover: #006648;
+  --brand-soft: #eaf6f2;
+
+  --surface: #ffffff;
+  --surface-muted: #f1f4f2;
+
+  --border: #dfe5e1;
+
+  --text-primary: #202523;
+  --text-secondary: #58635d;
+  --text-muted: #879089;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-html,
-body {
-  min-height: 100%;
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  transition:
-    background-color 200ms ease,
-    color 200ms ease;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #ccece1;
+  color: #0d4e3b;
 }

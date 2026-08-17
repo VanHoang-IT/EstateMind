@@ -3,17 +3,24 @@ package com.hvh.dto;
 public class UserProfileResponseDTO {
 
     private Integer id;
+
     private String firstName;
+
     private String lastName;
+
     private String email;
+
     private String phone;
+
     private String username;
+
     private Boolean active;
+
     private String userRole;
+
     private String avatar;
 
-    public UserProfileResponseDTO() {
-    }
+    public UserProfileResponseDTO() {}
 
     public UserProfileResponseDTO(
             Integer id,

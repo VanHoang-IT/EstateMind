@@ -8,7 +8,6 @@ import com.hvh.pojo.ChatHistory;
 import java.util.List;
 
 /**
- *
  * @author acer
  */
 public interface ChatHistoryRepository {

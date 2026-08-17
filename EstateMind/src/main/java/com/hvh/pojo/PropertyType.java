@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -32,9 +31,16 @@ import java.util.Set;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "PropertyType.findAll", query = "SELECT p FROM PropertyType p"),
-    @NamedQuery(name = "PropertyType.findById", query = "SELECT p FROM PropertyType p WHERE p.id = :id"),
-    @NamedQuery(name = "PropertyType.findByName", query = "SELECT p FROM PropertyType p WHERE p.name = :name"),
-    @NamedQuery(name = "PropertyType.findByDescription", query = "SELECT p FROM PropertyType p WHERE p.description = :description")})
+    @NamedQuery(
+            name = "PropertyType.findById",
+            query = "SELECT p FROM PropertyType p WHERE p.id = :id"),
+    @NamedQuery(
+            name = "PropertyType.findByName",
+            query = "SELECT p FROM PropertyType p WHERE p.name = :name"),
+    @NamedQuery(
+            name = "PropertyType.findByDescription",
+            query = "SELECT p FROM PropertyType p WHERE p.description = :description")
+})
 public class PropertyType implements Serializable {
 
     @Basic(optional = false)
@@ -42,22 +48,24 @@ public class PropertyType implements Serializable {
     @Size(min = 1, max = 50)
     @Column(name = "name")
     private String name;
+
     @Size(max = 2147483647)
     @Column(name = "description")
     private String description;
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyTypeId")
     @JsonIgnore
     private Set<Category> categorySet;
 
-    public PropertyType() {
-    }
+    public PropertyType() {}
 
     public PropertyType(Integer id) {
         this.id = id;
@@ -75,7 +83,6 @@ public class PropertyType implements Serializable {
     public void setId(Integer id) {
         this.id = id;
     }
-
 
     @XmlTransient
     public Set<Category> getCategorySet() {
@@ -100,7 +107,8 @@ public class PropertyType implements Serializable {
             return false;
         }
         PropertyType other = (PropertyType) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -126,5 +134,4 @@ public class PropertyType implements Serializable {
     public void setDescription(String description) {
         this.description = description;
     }
-    
 }

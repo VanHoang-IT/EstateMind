@@ -14,12 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- *
  * @author acer
  */
 @Service
-public class CustomerProfileServiceImpl
-        implements CustomerProfileService {
+public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     @Autowired
     private CustomerProfileRepository customerProfileRepo;
@@ -29,15 +27,10 @@ public class CustomerProfileServiceImpl
     public CustomerProfile createProfileForUser(Users user) {
 
         if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException(
-                    "Người dùng chưa được lưu"
-            );
+            throw new IllegalArgumentException("Người dùng chưa được lưu");
         }
 
-        CustomerProfile existing =
-                this.customerProfileRepo.getByUserId(
-                        user.getId()
-                );
+        CustomerProfile existing = this.customerProfileRepo.getByUserId(user.getId());
 
         if (existing != null) {
             return existing;
@@ -45,8 +38,7 @@ public class CustomerProfileServiceImpl
 
         Date now = new Date();
 
-        CustomerProfile profile =
-                new CustomerProfile();
+        CustomerProfile profile = new CustomerProfile();
 
         profile.setId(user.getId());
         profile.setUsers(user);
@@ -56,19 +48,15 @@ public class CustomerProfileServiceImpl
         profile.setCreatedAt(now);
         profile.setUpdatedAt(now);
 
-        return this.customerProfileRepo.createProfile(
-                profile
-        );
+        return this.customerProfileRepo.createProfile(profile);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CustomerProfile getByUserId(int userId) {
-        return this.customerProfileRepo.getByUserId(
-                userId
-        );
+        return this.customerProfileRepo.getByUserId(userId);
     }
-    
+
     @Override
     @Transactional
     public CustomerProfile updateProfile(CustomerProfile profile) {

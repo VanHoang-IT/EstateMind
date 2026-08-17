@@ -20,13 +20,12 @@ import jakarta.persistence.TemporalType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import java.io.Serializable;
 import java.util.Date;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -34,31 +33,45 @@ import java.util.Date;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "ChatHistory.findAll", query = "SELECT c FROM ChatHistory c"),
-    @NamedQuery(name = "ChatHistory.findById", query = "SELECT c FROM ChatHistory c WHERE c.id = :id"),
-    @NamedQuery(name = "ChatHistory.findByQuestion", query = "SELECT c FROM ChatHistory c WHERE c.question = :question"),
-    @NamedQuery(name = "ChatHistory.findByAnswer", query = "SELECT c FROM ChatHistory c WHERE c.answer = :answer"),
-    @NamedQuery(name = "ChatHistory.findByCreatedDate", query = "SELECT c FROM ChatHistory c WHERE c.createdDate = :createdDate")})
+    @NamedQuery(
+            name = "ChatHistory.findById",
+            query = "SELECT c FROM ChatHistory c WHERE c.id = :id"),
+    @NamedQuery(
+            name = "ChatHistory.findByQuestion",
+            query = "SELECT c FROM ChatHistory c WHERE c.question = :question"),
+    @NamedQuery(
+            name = "ChatHistory.findByAnswer",
+            query = "SELECT c FROM ChatHistory c WHERE c.answer = :answer"),
+    @NamedQuery(
+            name = "ChatHistory.findByCreatedDate",
+            query = "SELECT c FROM ChatHistory c WHERE c.createdDate = :createdDate")
+})
 public class ChatHistory implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 2147483647)
     @Column(name = "question")
     private String question;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 2147483647)
     @Column(name = "answer")
     private String answer;
+
     @Column(name = "created_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
+
     // Cột DB là jsonb — khai Java kiểu String (không phải Object) và dùng
     // @JdbcTypeCode(SqlTypes.JSON) để Hibernate bind đúng kiểu JSON xuống
     // Postgres. Trước đây khai kiểu Object khiến Hibernate bind bằng
@@ -66,15 +79,16 @@ public class ChatHistory implements Serializable {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "source_refs")
     private String sourceRefs;
+
     @JoinColumn(name = "session_id", referencedColumnName = "id")
     @ManyToOne
     private ChatSession sessionId;
+
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Users userId;
 
-    public ChatHistory() {
-    }
+    public ChatHistory() {}
 
     public ChatHistory(Integer id) {
         this.id = id;
@@ -156,7 +170,8 @@ public class ChatHistory implements Serializable {
             return false;
         }
         ChatHistory other = (ChatHistory) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -166,5 +181,4 @@ public class ChatHistory implements Serializable {
     public String toString() {
         return "com.hvh.pojo.ChatHistory[ id=" + id + " ]";
     }
-    
 }

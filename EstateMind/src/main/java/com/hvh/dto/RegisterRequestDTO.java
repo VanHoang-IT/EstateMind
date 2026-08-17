@@ -8,8 +8,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
 /**
- *
  * @author acer
  */
 public class RegisterRequestDTO {
@@ -43,16 +43,16 @@ public class RegisterRequestDTO {
     @Pattern(
             regexp = "^(CUSTOMER|SELLER|ROLE_CUSTOMER|ROLE_SELLER)$",
             flags = Pattern.Flag.CASE_INSENSITIVE,
-            message = "Vai trò chỉ được là CUSTOMER hoặc SELLER"
-    )
+            message = "Vai trò chỉ được là CUSTOMER hoặc SELLER")
     private String role;
 
     private String address;
+
     private String identityNumber;
+
     private String bio;
 
-    public RegisterRequestDTO() {
-    }
+    public RegisterRequestDTO() {}
 
     public String getFirstName() {
         return firstName;
@@ -134,4 +134,3 @@ public class RegisterRequestDTO {
         this.bio = bio;
     }
 }
-

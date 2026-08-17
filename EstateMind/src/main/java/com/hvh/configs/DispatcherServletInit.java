@@ -9,7 +9,6 @@ import jakarta.servlet.ServletRegistration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 /**
- *
  * @author acer
  */
 public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -25,14 +24,12 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class[] {
-            WebAppContextConfigs.class
-        };
+        return new Class[] {WebAppContextConfigs.class};
     }
 
     @Override
     protected String[] getServletMappings() {
-        return new String[] { "/" };
+        return new String[] {"/"};
     }
 
     @Override
@@ -42,6 +39,8 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
         long maxRequestSize = 20971520; // 20MB
         int fileSizeThreshold = 0;
 
-        registration.setMultipartConfig(new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold));
+        registration.setMultipartConfig(
+                new MultipartConfigElement(
+                        location, maxFileSize, maxRequestSize, fileSizeThreshold));
     }
 }

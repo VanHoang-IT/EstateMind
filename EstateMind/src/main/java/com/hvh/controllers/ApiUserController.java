@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- *
  * @author acer
  */
 @RestController
@@ -45,109 +44,63 @@ public class ApiUserController {
     @PostMapping(
             value = "/users",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserProfileResponseDTO> register(
             @Valid @ModelAttribute RegisterRequestDTO request,
-            @RequestParam(
-                    value = "avatar",
-                    required = false
-            ) MultipartFile avatar) {
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar) {
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(
-                        this.userService.register(
-                                request,
-                                avatar
-                        )
-                );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(this.userService.register(request, avatar));
     }
 
     @PostMapping(
             value = "/login",
             consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<LoginResponseDTO> login(
-            @Valid @RequestBody LoginRequestDTO request) {
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
 
-        return ResponseEntity.ok(
-                this.userService.login(request)
-        );
+        return ResponseEntity.ok(this.userService.login(request));
     }
 
-    @GetMapping(
-            value = "/secure/profile",
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+    @GetMapping(value = "/secure/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserProfileResponseDTO> getProfile(
-            Principal principal) {
+    public ResponseEntity<UserProfileResponseDTO> getProfile(Principal principal) {
 
-        return ResponseEntity.ok(
-                this.userService.getUserProfile(
-                        principal.getName()
-                )
-        );
+        return ResponseEntity.ok(this.userService.getUserProfile(principal.getName()));
     }
 
     @PutMapping(
             value = "/secure/profile",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserProfileResponseDTO> updateProfile(
             @Valid @ModelAttribute UpdateProfileDTO request,
-            @RequestParam(
-                    value = "avatar",
-                    required = false
-            ) MultipartFile avatar,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
             Principal principal) {
 
         return ResponseEntity.ok(
-                this.userService.updateProfile(
-                        principal.getName(),
-                        request,
-                        avatar
-                )
-        );
+                this.userService.updateProfile(principal.getName(), request, avatar));
     }
 
-    @GetMapping(
-            value = "/secure/verification-profile",
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+    @GetMapping(value = "/secure/verification-profile", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<VerificationProfileResponseDTO<?>>
-            getVerificationProfile(
-                    Principal principal) {
+    public ResponseEntity<VerificationProfileResponseDTO<?>> getVerificationProfile(
+            Principal principal) {
 
-        return ResponseEntity.ok(
-                this.userService
-                        .getVerificationProfile(
-                                principal.getName()
-                        )
-        );
+        return ResponseEntity.ok(this.userService.getVerificationProfile(principal.getName()));
     }
 
     @PutMapping(
             value = "/secure/verification-profile",
             consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateVerificationProfile(
-            @RequestBody UpdateVerificationProfileDTO request,
-            Principal principal) {
+            @RequestBody UpdateVerificationProfileDTO request, Principal principal) {
         try {
             return ResponseEntity.ok(
-                    this.userService.updateVerificationProfile(
-                            principal.getName(),
-                            request
-                    )
-            );
+                    this.userService.updateVerificationProfile(principal.getName(), request));
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }

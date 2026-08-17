@@ -71,6 +71,7 @@ export default function PropertyTypeMenu({
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-label={`Chọn danh mục ${propertyType.name}`}
         className={`
           flex items-center gap-1
           transition-colors

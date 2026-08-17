@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import Link from "next/link";
 
+import MindScoreBadge from "@/components/property/MindScoreBadge";
+import { BedDouble, Building2, Globe, MapPin, Ruler } from "lucide-react";
+
+import FavoriteButton from "@/components/FavoriteButton";
+import { formatPrice } from "@/lib/format";
 import { Property } from "@/types/property";
-import { useAuth } from "@/contexts/AuthContext";
-import { favoriteService } from "@/services/favoriteService";
 
 interface PropertyCardProps {
   property: Property;
@@ -14,276 +16,298 @@ interface PropertyCardProps {
 }
 
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=85";
 
-function formatPrice(price?: number): string {
-  if (price == null || price <= 0) {
-    return "Giá thỏa thuận";
+function statusLabel(status?: string, categoryId?: number) {
+  const isRent = categoryId != null && categoryId >= 13;
+
+  switch (status) {
+    case "AVAILABLE":
+      return isRent ? "Đang cho thuê" : "Đang bán";
+    case "SOLD":
+      return "Đã bán";
+    case "RENTED":
+      return "Đã cho thuê";
+    case "HIDDEN":
+      return "Đã ẩn";
+    case "INACTIVE":
+      return "Không hoạt động";
+    default:
+      return status || "";
   }
-
-  if (price >= 1_000_000_000) {
-    return `${(price / 1_000_000_000).toLocaleString("vi-VN", {
-      maximumFractionDigits: 2,
-    })} tỷ`;
-  }
-
-  if (price >= 1_000_000) {
-    return `${(price / 1_000_000).toLocaleString("vi-VN", {
-      maximumFractionDigits: 2,
-    })} triệu`;
-  }
-
-  return `${price.toLocaleString("vi-VN")} đồng`;
 }
 
 export default function PropertyCard({
   property,
   priority = false,
 }: PropertyCardProps) {
-  const { user } = useAuth();
-
-  const [favorited, setFavorited] = useState(false);
-  const [busy, setBusy] = useState(false);
-
   const primaryImage =
-    property.mainImage ||
     property.propertyImagesSet?.find((image) => image.isPrimary)?.imageUrl ||
+    property.mainImage ||
     property.propertyImagesSet?.[0]?.imageUrl ||
     FALLBACK_IMAGE;
 
-  const isFavorited = Boolean(user) && favorited;
+  const isCrawled = Boolean(property.urlCrawl);
 
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    let active = true;
-
-    favoriteService
-      .isFavorited(property.id)
-      .then((result) => {
-        if (active) {
-          setFavorited(result);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setFavorited(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [user, property.id]);
-
-  async function toggleFavorite() {
-    if (!user || busy) {
-      return;
-    }
-
-    setBusy(true);
-
-    try {
-      if (isFavorited) {
-        await favoriteService.removeFavorite(property.id);
-        setFavorited(false);
-      } else {
-        await favoriteService.addFavorite(property.id);
-        setFavorited(true);
-      }
-    } catch {
-      // Có thể bổ sung toast thông báo lỗi tại đây.
-    } finally {
-      setBusy(false);
-    }
-  }
+  const categoryId = property.categoryId?.id;
 
   return (
     <article
       className="
-        group relative flex flex-col overflow-hidden
-        rounded-lg border border-gray-200 bg-white
-        shadow-sm transition-all duration-200
-        hover:-translate-y-0.5 hover:shadow-md
-        dark:border-slate-800 dark:bg-slate-900
-        dark:shadow-black/20
+        group
+        relative
+        flex
+        h-full
+        flex-col
+        overflow-hidden
+        rounded-xl
+        border
+        border-[#e2e7e4]
+        bg-white
+        shadow-[0_8px_28px_rgba(25,45,35,0.04)]
+        transition
+        duration-300
+        hover:-translate-y-1
+        hover:shadow-[0_18px_45px_rgba(25,45,35,0.09)]
       "
     >
       <Link
         href={`/properties/${property.id}`}
-        className="flex flex-grow cursor-pointer flex-col"
+        className="
+          flex
+          h-full
+          flex-col
+        "
       >
         <div
           className="
-            relative h-48 w-full overflow-hidden
-            bg-gray-200 dark:bg-slate-800
+            relative
+            aspect-[16/10]
+            overflow-hidden
+            bg-[#eef1ef]
           "
         >
           <Image
             src={primaryImage}
             alt={property.title || "Ảnh bất động sản"}
             fill
-            sizes="(max-width: 768px) 50vw, 25vw"
             priority={priority}
             className="
-              object-cover transition-transform duration-300
-              group-hover:scale-105
+              object-cover
+              transition
+              duration-500
+              group-hover:scale-[1.035]
+            "
+            sizes="
+              (max-width: 768px) 100vw,
+              (max-width: 1200px) 50vw,
+              33vw
             "
           />
 
-          <span
-            className="
-              absolute left-2 top-2 z-10
-              rounded-sm bg-red-600 px-1.5 py-0.5
-              text-[10px] font-bold text-white
-              shadow-sm
-            "
-          >
-            VIP
-          </span>
+          {property.status && (
+            <span
+              className="
+                absolute
+                left-3
+                top-3
+                z-10
+                rounded-md
+                bg-brand
+                px-3
+                py-1.5
+                text-xs
+                font-semibold
+                text-white
+                shadow-sm
+              "
+            >
+              {statusLabel(property.status, categoryId)}
+            </span>
+          )}
+
+          {isCrawled && (
+            <span
+              className="
+                absolute
+                bottom-3
+                left-3
+                z-10
+                inline-flex
+                items-center
+                gap-1.5
+                rounded-md
+                bg-black/65
+                px-2.5
+                py-1.5
+                text-[11px]
+                font-medium
+                text-white
+                backdrop-blur-sm
+              "
+            >
+              <Globe size={12} />
+              Tin tham khảo
+            </span>
+          )}
         </div>
 
-        <div className="flex flex-grow flex-col p-3">
+        <div
+          className="
+            flex
+            flex-1
+            flex-col
+            p-5
+          "
+        >
+          <div
+            className="
+              flex
+              flex-wrap
+              items-center
+              justify-between
+              gap-2
+            "
+          >
+            <p
+              className="
+                text-[26px]
+                font-bold
+                tracking-[-0.035em]
+                text-[#202523]
+              "
+            >
+              {formatPrice(property.price, categoryId)}
+            </p>
+
+            <MindScoreBadge score={property.mindScore} />
+          </div>
+
           <h3
             className="
-              mb-2 line-clamp-2 text-sm font-semibold
-              uppercase leading-5 text-gray-800
-              transition-colors
-              group-hover:text-red-600
-              dark:text-slate-100
-              dark:group-hover:text-red-400
+              mt-2
+              line-clamp-1
+              text-base
+              font-semibold
+              text-[#2f3934]
             "
           >
             {property.title}
           </h3>
 
-          <div className="mb-2 flex items-baseline gap-3">
-            <span className="text-base font-bold text-red-600 dark:text-red-400">
-              {formatPrice(property.price)}
-            </span>
+          <div
+            className="
+              mt-2
+              flex
+              min-w-0
+              items-center
+              gap-1.5
+              text-sm
+              text-[#6b766f]
+            "
+          >
+            <MapPin
+              size={15}
+              className="
+                shrink-0
+                text-[#738078]
+              "
+            />
 
-            {property.area != null && property.area > 0 && (
-              <span className="text-sm text-gray-600 dark:text-slate-400">
-                · {property.area.toLocaleString("vi-VN")} m²
+            <span className="truncate">
+              {property.address || property.district || "Chưa cập nhật vị trí"}
+            </span>
+          </div>
+
+          <div
+            className="
+              mt-5
+              flex
+              flex-wrap
+              gap-2
+            "
+          >
+            {property.bedrooms != null && (
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1.5
+                  rounded-md
+                  bg-[#f0f3f1]
+                  px-2.5
+                  py-2
+                  text-xs
+                  font-medium
+                  text-[#4f5b54]
+                "
+              >
+                <BedDouble size={15} />
+                {property.bedrooms} phòng ngủ
               </span>
             )}
-          </div>
 
-          <div
-            className="
-              mb-4 flex items-start gap-1
-              text-xs text-gray-500
-              dark:text-slate-400
-            "
-          >
-            <svg
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"
-              />
+            {property.area != null && (
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1.5
+                  rounded-md
+                  bg-[#f0f3f1]
+                  px-2.5
+                  py-2
+                  text-xs
+                  font-medium
+                  text-[#4f5b54]
+                "
+              >
+                <Ruler size={15} />
+                {property.area.toLocaleString("vi-VN")} m²
+              </span>
+            )}
 
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
+            {property.categoryId?.name && (
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1.5
+                  rounded-md
+                  bg-[#f0f3f1]
+                  px-2.5
+                  py-2
+                  text-xs
+                  font-medium
+                  text-[#4f5b54]
+                "
+              >
+                <Building2 size={15} />
 
-            <span className="line-clamp-1">
-              {property.address || property.district || "Chưa cập nhật địa chỉ"}
-            </span>
-          </div>
-
-          <div
-            className="
-              mt-auto flex items-center justify-between
-              border-t border-gray-100 pt-3 pr-10
-              dark:border-slate-800
-            "
-          >
-            <span className="text-[11px] text-gray-400 dark:text-slate-500">
-              {property.categoryId?.name || "Bất động sản"}
-            </span>
+                <span
+                  className="
+                    max-w-[110px]
+                    truncate
+                  "
+                >
+                  {property.categoryId.name}
+                </span>
+              </span>
+            )}
           </div>
         </div>
       </Link>
 
-      <button
-        type="button"
-        onClick={toggleFavorite}
-        disabled={!user || busy}
-        title={
-          user
-            ? isFavorited
-              ? "Bỏ lưu tin"
-              : "Lưu tin"
-            : "Đăng nhập để lưu tin"
-        }
-        aria-label={
-          isFavorited
-            ? "Bỏ khỏi danh sách yêu thích"
-            : "Thêm vào danh sách yêu thích"
-        }
-        aria-pressed={isFavorited}
-        className={`
-          absolute bottom-3 right-3 z-10
-          rounded-md border p-1.5
-          transition-colors
-          focus-visible:outline-none
-          focus-visible:ring-2
-          focus-visible:ring-red-500
-          focus-visible:ring-offset-2
-          dark:focus-visible:ring-offset-slate-900
-          ${
-            isFavorited
-              ? `
-                border-red-200 bg-red-50 text-red-500
-                hover:bg-red-100
-                dark:border-red-900/70
-                dark:bg-red-950/50
-                dark:text-red-400
-                dark:hover:bg-red-950
-              `
-              : `
-                border-gray-200 bg-white text-gray-400
-                hover:border-red-200 hover:text-red-500
-                dark:border-slate-700
-                dark:bg-slate-900
-                dark:text-slate-400
-                dark:hover:border-red-900
-                dark:hover:text-red-400
-              `
-          }
-          disabled:cursor-not-allowed
-          disabled:opacity-40
-        `}
+      <div
+        className="
+          absolute
+          right-3
+          top-3
+          z-20
+        "
       >
-        <svg
-          className="h-4 w-4"
-          fill={isFavorited ? "currentColor" : "none"}
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.5"
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          />
-        </svg>
-      </button>
+        <FavoriteButton propertyId={property.id} />
+      </div>
     </article>
   );
 }

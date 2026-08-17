@@ -63,7 +63,7 @@ export default function AccountProfilePage() {
         ? "Người bán"
         : currentUser.userRole === "ROLE_CUSTOMER" ||
             currentUser.userRole === "ROLE_BUYER"
-          ? "Người mua"
+          ? "Khách hàng"
           : "Người dùng";
 
   const canVerifyAccount =
@@ -103,9 +103,9 @@ export default function AccountProfilePage() {
 
       await refreshUser();
       setEditing(false);
-    } catch (err) {
+    } catch {
       setSaveError(
-        err instanceof Error ? err.message : "Không thể cập nhật thông tin.",
+        "Không thể cập nhật hồ sơ. Vui lòng kiểm tra thông tin và thử lại.",
       );
     } finally {
       setSaving(false);
@@ -120,7 +120,7 @@ export default function AccountProfilePage() {
             href="/"
             className="text-sm font-medium text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
           >
-            ← Về trang chủ
+            ← Về Trang chủ
           </Link>
 
           {canVerifyAccount && (
@@ -128,7 +128,7 @@ export default function AccountProfilePage() {
               href="/account/verification"
               className="rounded-md border border-red-500 px-3 py-2 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-950/30"
             >
-              Xác nhận tài khoản
+              Xác minh tài khoản
             </Link>
           )}
         </div>
@@ -136,11 +136,11 @@ export default function AccountProfilePage() {
         <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="border-b border-gray-200 px-6 py-5 dark:border-slate-800">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Thông tin tài khoản
+              Hồ sơ của tôi
             </h1>
 
             <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-              Thông tin được lấy từ tài khoản đang đăng nhập.
+              Quản lý thông tin liên kết với tài khoản đang đăng nhập.
             </p>
           </div>
 
@@ -175,7 +175,7 @@ export default function AccountProfilePage() {
                   }`}
                 >
                   {currentUser.active === false
-                    ? "Tài khoản bị khóa"
+                    ? "Tài khoản bị tạm khóa"
                     : "Tài khoản đang hoạt động"}
                 </span>
               </div>
@@ -234,7 +234,7 @@ export default function AccountProfilePage() {
 
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-                      Ảnh đại diện mới (tuỳ chọn)
+                      Ảnh đại diện mới (không bắt buộc)
                     </label>
                     <input
                       type="file"
@@ -269,7 +269,7 @@ export default function AccountProfilePage() {
                     disabled={saving}
                     className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    Huỷ
+                    Hủy
                   </button>
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function AccountProfilePage() {
                       Vai trò
                     </dt>
                     <dd className="mt-1 font-medium text-gray-900 dark:text-white">
-                      {currentUser.userRole || "Chưa có dữ liệu"}
+                      {roleLabel}
                     </dd>
                   </div>
                 </dl>
@@ -357,14 +357,15 @@ export default function AccountProfilePage() {
                     onClick={startEditing}
                     className="rounded-md bg-red-500 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-red-600"
                   >
-                    Chỉnh sửa thông tin
+                    Chỉnh sửa hồ sơ
                   </button>
                 </div>
               </>
             )}
 
             <p className="mt-3 text-xs text-gray-400 dark:text-slate-500">
-              Mật khẩu không được hiển thị trên trang hồ sơ để bảo vệ tài khoản.
+              Mật khẩu của bạn không bao giờ được hiển thị trên trang này nhằm
+              bảo vệ tài khoản.
             </p>
           </div>
         </section>

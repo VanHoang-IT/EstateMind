@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
 /**
- *
  * @author acer
  */
 @Repository
@@ -34,14 +34,14 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     public CustomerProfile getByUserId(int userId) {
         Session session = this.factory.getObject().getCurrentSession();
 
-        Query<CustomerProfile> query = session.createQuery(
-                "FROM CustomerProfile c WHERE c.users.id = :userId",
-                CustomerProfile.class);
+        Query<CustomerProfile> query =
+                session.createQuery(
+                        "FROM CustomerProfile c WHERE c.users.id = :userId", CustomerProfile.class);
         query.setParameter("userId", userId);
 
         return query.getResultStream().findFirst().orElse(null);
     }
-    
+
     @Override
     public CustomerProfile updateProfile(CustomerProfile profile) {
         Session session = this.factory.getObject().getCurrentSession();

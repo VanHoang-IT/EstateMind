@@ -1,477 +1,696 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-import { useAuth } from "@/contexts/AuthContext";
-import ThemeToggle from "@/components/ThemeToggle";
-import PropertyTypeMenu from "@/components/PropertyTypeMenu";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 import {
-  propertyTypeService,
-  type PropertyType,
-} from "@/services/propertyTypeService";
+  BadgeCheck,
+  Bookmark,
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Menu,
+  Plus,
+  UserRound,
+  X,
+} from "lucide-react";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { getInitials } from "@/lib/format";
+
+const navItems = [
+  {
+    label: "Trang chủ",
+    href: "/",
+  },
+  {
+    label: "Bất động sản",
+    href: "/projects",
+  },
+  {
+    label: "Giới thiệu",
+    href: "/#about",
+  },
+  {
+    label: "Tin tức",
+    href: "/#insights",
+  },
+];
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const canVerifyAccount =
-    user?.userRole === "ROLE_CUSTOMER" || user?.userRole === "ROLE_SELLER";
-  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
-  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const { user, loading: authLoading, logout } = useAuth();
 
-  const parsedCategoryId = Number(searchParams.get("categoryId"));
-  const selectedCategoryId =
-    Number.isInteger(parsedCategoryId) && parsedCategoryId > 0
-      ? parsedCategoryId
-      : undefined;
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const canPostProperty =
-    user?.userRole === "ROLE_SELLER" || user?.userRole === "ROLE_ADMIN";
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const isSeller = user?.userRole === "ROLE_SELLER";
-  const isCustomer = user?.userRole === "ROLE_CUSTOMER";
 
-  const displayName = user
-    ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username
-    : "";
+  const isAdmin = user?.userRole === "ROLE_ADMIN";
 
-  const avatarInitial = displayName
-    ? displayName.trim().charAt(0).toUpperCase()
-    : "U";
+  const canUseFavorites =
+    user?.userRole === "ROLE_CUSTOMER" || user?.userRole === "ROLE_SELLER";
 
-  useEffect(() => {
-    let ignore = false;
+  const canVerifyAccount =
+    user?.userRole === "ROLE_CUSTOMER" || user?.userRole === "ROLE_SELLER";
 
-    propertyTypeService
-      .getPropertyTypes()
-      .then((result) => {
-        if (!ignore) {
-          setPropertyTypes(result);
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setPropertyTypes([]);
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleOutsideClick(event: MouseEvent) {
-      if (
-        accountMenuRef.current &&
-        !accountMenuRef.current.contains(event.target as Node)
-      ) {
-        setAccountMenuOpen(false);
-      }
+  function isActive(href: string) {
+    if (href === "/") {
+      return pathname === "/";
     }
 
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setAccountMenuOpen(false);
-      }
+    if (href === "/projects") {
+      return pathname.startsWith("/projects");
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
-    document.addEventListener("keydown", handleEscape);
+    return false;
+  }
 
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
+  function closeMenus() {
+    setAccountOpen(false);
+    setMobileOpen(false);
+  }
 
   function handleLogout() {
-    setAccountMenuOpen(false);
     logout();
+
+    closeMenus();
+
     router.push("/");
-    router.refresh();
   }
+
+  const initials = getInitials(
+    user?.firstName,
+    user?.lastName,
+    user?.username || "EM",
+  );
+
+  const menuLinkClass = `
+      flex
+      items-center
+      gap-2
+      rounded-lg
+      px-3
+      py-2.5
+      text-sm
+      text-[#4f5954]
+      transition
+      hover:bg-[#f4f7f5]
+      hover:text-brand
+    `;
 
   return (
     <header
       className="
-        sticky top-0 z-50
-        border-b border-gray-200
-        bg-white shadow-sm
-        transition-colors duration-200
-        dark:border-slate-800
-        dark:bg-slate-950
-        dark:shadow-black/20
+        sticky
+        top-0
+        z-50
+        border-b
+        border-border
+        bg-white/95
+        backdrop-blur
       "
     >
       <div
         className="
-          mx-auto flex h-16 max-w-7xl
-          items-center justify-between
-          px-4 text-sm
-          sm:px-6 lg:px-8
+          mx-auto
+          flex
+          h-[72px]
+          max-w-[1180px]
+          items-center
+          justify-between
+          px-5
+          sm:px-6
         "
       >
-        <div className="flex min-w-0 items-center gap-4 md:gap-8">
-          <Link
-            href="/"
-            aria-label="Về trang chủ"
-            className="
-              flex flex-shrink-0 items-center gap-1
-              text-xl font-bold text-red-500
-              transition-opacity hover:opacity-90
-              dark:text-red-400
-            "
-          >
-            <svg
-              className="h-6 w-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+        {/* LOGO */}
+        <Link
+          href="/"
+          onClick={() => setMobileOpen(false)}
+          className="
+            text-[27px]
+            font-bold
+            tracking-[-0.04em]
+            text-brand
+          "
+        >
+          EstateMind
+        </Link>
+
+        {/* DESKTOP NAV */}
+        <nav
+          className="
+            hidden
+            items-center
+            gap-8
+            md:flex
+          "
+        >
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`
+                  relative
+                  py-6
+                  text-[15px]
+                  font-medium
+                  transition-colors
+                  ${
+                    isActive(item.href)
+                      ? "text-brand"
+                      : "text-[#4f5954] hover:text-brand"
+                  }
+                `}
             >
-              <path d="M12 3L2 12h3v8h14v-8h3L12 3zm0 2.8l7 7V20H5v-7.2l7-7z" />
-            </svg>
+              {item.label}
 
-            <span className="hidden sm:inline">Batdongsan</span>
-          </Link>
-
-          <nav
-            aria-label="Điều hướng chính"
-            className="
-              hidden items-center gap-6
-              font-medium text-gray-700
-              md:flex
-              dark:text-slate-300
-            "
-          >
-            {propertyTypes.map((propertyType) => (
-              <PropertyTypeMenu
-                key={propertyType.id}
-                propertyType={propertyType}
-                selectedCategoryId={selectedCategoryId}
-              />
-            ))}
-
-            {isCustomer && (
-              <Link
-                href="/favorites"
-                className="
-                  transition-colors
-                  hover:text-red-500
-                  dark:hover:text-red-400
-                "
-              >
-                Tin đã lưu
-              </Link>
-            )}
-
-            {isSeller && (
-              <Link
-                href="/properties/mine"
-                className="
-                  transition-colors
-                  hover:text-red-500
-                  dark:hover:text-red-400
-                "
-              >
-                Tin đã đăng
-              </Link>
-            )}
-
-            {isSeller && (
-              <Link
-                href="/properties/pending"
-                className="
-                  transition-colors
-                  hover:text-red-500
-                  dark:hover:text-red-400
-                "
-              >
-                Tin chờ duyệt
-              </Link>
-            )}
-          </nav>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center gap-2 sm:gap-4">
-          <ThemeToggle />
-
-          {user ? (
-            <div ref={accountMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setAccountMenuOpen((current) => !current)}
-                aria-haspopup="menu"
-                aria-expanded={accountMenuOpen}
-                className="
-                  flex items-center gap-2
-                  rounded-full border border-transparent
-                  p-1
-                  transition-colors
-                  hover:border-gray-200
-                  hover:bg-gray-50
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-red-200
-                  dark:hover:border-slate-700
-                  dark:hover:bg-slate-900
-                  dark:focus:ring-red-900
-                "
-              >
-                {user.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={`Ảnh đại diện của ${displayName}`}
-                    className="
-                      h-9 w-9 rounded-full
-                      border border-gray-200
-                      object-cover
-                      dark:border-slate-700
-                    "
-                  />
-                ) : (
-                  <span
-                    className="
-                      flex h-9 w-9 items-center justify-center
-                      rounded-full
-                      bg-red-500
-                      font-semibold text-white
-                      dark:bg-red-600
-                    "
-                  >
-                    {avatarInitial}
-                  </span>
-                )}
-
+              {isActive(item.href) && (
                 <span
                   className="
-                    hidden max-w-36 truncate
-                    text-gray-700
-                    lg:block
-                    dark:text-slate-200
-                  "
-                >
-                  {displayName}
-                </span>
+                      absolute
+                      inset-x-0
+                      bottom-0
+                      h-0.5
+                      rounded-full
+                      bg-brand
+                    "
+                />
+              )}
+            </Link>
+          ))}
+        </nav>
 
-                <svg
-                  className={`
-                    hidden h-4 w-4
-                    text-gray-500
-                    transition-transform
-                    lg:block
-                    dark:text-slate-400
-                    ${accountMenuOpen ? "rotate-180" : ""}
-                  `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="m19 9-7 7-7-7"
-                  />
-                </svg>
+        {/* DESKTOP ACTIONS */}
+        <div
+          className="
+            hidden
+            items-center
+            gap-3
+            md:flex
+          "
+        >
+          {!authLoading && isSeller && (
+            <Link
+              href="/properties/new"
+              className="
+                inline-flex
+                h-10
+                items-center
+                gap-2
+                rounded-lg
+                bg-brand
+                px-4
+                text-sm
+                font-semibold
+                text-white
+                transition
+                hover:bg-brand-hover
+              "
+            >
+              <Plus size={17} />
+              Đăng tin
+            </Link>
+          )}
+
+          {/* FAVORITES SHORTCUT */}
+          {canUseFavorites && (
+            <Link
+              href="/favorites"
+              aria-label="Bất động sản đã lưu"
+              title="Bất động sản đã lưu"
+              className={`
+                grid
+                h-10
+                w-10
+                place-items-center
+                rounded-full
+                border
+                transition
+                ${
+                  pathname.startsWith("/favorites")
+                    ? "border-brand bg-brand-soft text-brand"
+                    : "border-[#d8e0dc] bg-white text-[#52605a] hover:border-brand hover:text-brand"
+                }
+              `}
+            >
+              <Bookmark size={18} />
+            </Link>
+          )}
+
+          {/* AUTH */}
+          {authLoading ? (
+            <div
+              className="
+                h-10
+                w-10
+                animate-pulse
+                rounded-full
+                bg-[#edf2ef]
+              "
+            />
+          ) : user ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setAccountOpen((value) => !value)}
+                aria-label="Mở menu tài khoản"
+                className="
+                  grid
+                  h-10
+                  w-10
+                  place-items-center
+                  rounded-full
+                  border
+                  border-[#d8e0dc]
+                  bg-brand-soft
+                  text-sm
+                  font-bold
+                  text-brand
+                  transition
+                  hover:border-brand/40
+                "
+              >
+                {initials}
               </button>
 
-              {accountMenuOpen && (
+              {accountOpen && (
                 <div
-                  role="menu"
                   className="
-                    absolute right-0 mt-2
-                    w-64 overflow-hidden
-                    rounded-lg
-                    border border-gray-200
-                    bg-white shadow-lg
-                    dark:border-slate-700
-                    dark:bg-slate-900
-                    dark:shadow-black/40
+                    absolute
+                    right-0
+                    top-12
+                    w-64
+                    overflow-hidden
+                    rounded-xl
+                    border
+                    border-border
+                    bg-white
+                    p-2
+                    shadow-[0_16px_45px_rgba(20,40,30,0.12)]
                   "
                 >
+                  {/* USER INFO */}
                   <div
                     className="
-                      border-b border-gray-100
-                      px-4 py-3
-                      dark:border-slate-800
+                      border-b
+                      border-border
+                      px-3
+                      py-3
                     "
                   >
                     <p
                       className="
-                        truncate font-semibold
-                        text-gray-900
-                        dark:text-white
+                        truncate
+                        text-sm
+                        font-semibold
+                        text-[#202523]
                       "
                     >
-                      {displayName}
+                      {user.firstName || user.username}
                     </p>
 
                     <p
                       className="
-                        truncate text-xs
-                        font-normal
-                        text-gray-500
-                        dark:text-slate-400
+                        truncate
+                        text-xs
+                        text-[#7a857f]
                       "
                     >
                       {user.email || user.username}
                     </p>
                   </div>
 
-                  <div className="py-1">
-                    {canVerifyAccount && (
-                      <Link
-                        href="/account/verification"
-                        role="menuitem"
-                        onClick={() => setAccountMenuOpen(false)}
-                        className="
-                          flex items-center gap-3
-                          px-4 py-3
-                          text-gray-700
-                          transition-colors
-                          hover:bg-gray-50
-                          hover:text-red-500
-                          dark:text-slate-200
-                          dark:hover:bg-slate-800
-                          dark:hover:text-red-400
-                        "
-                      >
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.8}
-                            d="M9 12.75 11.25 15 15 9.75m6 2.25a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                          />
-                        </svg>
-                        Xác nhận tài khoản
-                      </Link>
-                    )}
-
+                  {/* ADMIN DASHBOARD */}
+                  {isAdmin && (
                     <Link
-                      href="/account/profile"
-                      role="menuitem"
-                      onClick={() => setAccountMenuOpen(false)}
-                      className="
-                        flex items-center gap-3
-                        px-4 py-3
-                        text-gray-700
-                        transition-colors
-                        hover:bg-gray-50
-                        hover:text-red-500
-                        dark:text-slate-200
-                        dark:hover:bg-slate-800
-                        dark:hover:text-red-400
-                      "
+                      href="/admin"
+                      onClick={() => setAccountOpen(false)}
+                      className={`
+                        mt-1
+                        ${menuLinkClass}
+                      `}
                     >
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.8}
-                          d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
-                        />
-                      </svg>
-                      Thông tin tài khoản
+                      <LayoutDashboard size={16} />
+                      Trang quản trị
                     </Link>
-                  </div>
+                  )}
+
+                  {/* PROFILE */}
+                  <Link
+                    href="/account/profile"
+                    onClick={() => setAccountOpen(false)}
+                    className={`
+                      ${!isAdmin ? "mt-1" : ""}
+                      ${menuLinkClass}
+                    `}
+                  >
+                    <UserRound size={16} />
+                    Hồ sơ của tôi
+                  </Link>
+
+                  {/* VERIFICATION */}
+                  {canVerifyAccount && (
+                    <Link
+                      href="/account/verification"
+                      onClick={() => setAccountOpen(false)}
+                      className={menuLinkClass}
+                    >
+                      <BadgeCheck size={16} />
+                      Xác minh tài khoản
+                    </Link>
+                  )}
+
+                  {/* MY LISTINGS */}
+                  {isSeller && (
+                    <Link
+                      href="/properties/mine"
+                      onClick={() => setAccountOpen(false)}
+                      className={menuLinkClass}
+                    >
+                      <ListChecks size={16} />
+                      Tin đăng của tôi
+                    </Link>
+                  )}
+
+                  {/* FAVORITES */}
+                  {canUseFavorites && (
+                    <Link
+                      href="/favorites"
+                      onClick={() => setAccountOpen(false)}
+                      className={menuLinkClass}
+                    >
+                      <Bookmark size={16} />
+                      Bất động sản đã lưu
+                    </Link>
+                  )}
 
                   <div
                     className="
-                      border-t border-gray-100
-                      py-1
-                      dark:border-slate-800
+                      my-1
+                      border-t
+                      border-border
+                    "
+                  />
+
+                  {/* LOGOUT */}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="
+                      flex
+                      w-full
+                      items-center
+                      gap-2
+                      rounded-lg
+                      px-3
+                      py-2.5
+                      text-left
+                      text-sm
+                      text-[#4f5954]
+                      transition
+                      hover:bg-[#f4f7f5]
+                      hover:text-brand
                     "
                   >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogout}
-                      className="
-                        flex w-full items-center gap-3
-                        px-4 py-3
-                        text-left text-red-600
-                        transition-colors
-                        hover:bg-red-50
-                        dark:text-red-400
-                        dark:hover:bg-red-950/40
-                      "
-                    >
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.8}
-                          d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3-3H9m9 0-3-3m3 3-3 3"
-                        />
-                      </svg>
-                      Đăng xuất
-                    </button>
-                  </div>
+                    <LogOut size={16} />
+                    Đăng xuất
+                  </button>
                 </div>
               )}
             </div>
           ) : (
             <Link
               href="/login"
+              aria-label="Đăng nhập"
               className="
-                hidden font-medium
-                text-gray-600
-                transition-colors
-                hover:text-red-500
-                sm:inline
-                dark:text-slate-300
-                dark:hover:text-red-400
+                grid
+                h-10
+                w-10
+                place-items-center
+                rounded-full
+                border
+                border-[#d8e0dc]
+                text-[#52605a]
+                transition
+                hover:border-brand
+                hover:text-brand
               "
             >
-              Đăng nhập
-            </Link>
-          )}
-
-          {canPostProperty && (
-            <Link
-              href="/properties/new"
-              className="
-                rounded-md bg-red-500
-                px-3 py-2
-                font-semibold text-white
-                transition-colors
-                hover:bg-red-600
-                sm:px-4
-                dark:bg-red-600
-                dark:hover:bg-red-500
-              "
-            >
-              Đăng tin
+              <UserRound size={19} />
             </Link>
           )}
         </div>
+
+        {/* MOBILE BUTTON */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen((value) => !value)}
+          aria-label="Mở hoặc đóng menu"
+          className="
+            grid
+            h-10
+            w-10
+            place-items-center
+            rounded-lg
+            border
+            border-border
+            text-[#34433b]
+            md:hidden
+          "
+        >
+          {mobileOpen ? <X size={21} /> : <Menu size={21} />}
+        </button>
       </div>
+
+      {/* MOBILE MENU */}
+      {mobileOpen && (
+        <div
+          className="
+            border-t
+            border-border
+            bg-white
+            px-5
+            py-4
+            md:hidden
+          "
+        >
+          <nav
+            className="
+              flex
+              flex-col
+              gap-1
+            "
+          >
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`
+                    rounded-lg
+                    px-3
+                    py-3
+                    text-sm
+                    font-medium
+                    ${
+                      isActive(item.href)
+                        ? "bg-brand-soft text-brand"
+                        : "text-[#4f5954]"
+                    }
+                  `}
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            {!authLoading && isSeller && (
+              <Link
+                href="/properties/new"
+                onClick={() => setMobileOpen(false)}
+                className="
+                  mt-3
+                  inline-flex
+                  h-11
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-lg
+                  bg-brand
+                  px-4
+                  text-sm
+                  font-semibold
+                  text-white
+                "
+              >
+                <Plus size={17} />
+                Đăng tin
+              </Link>
+            )}
+
+            {!authLoading && user && (
+              <>
+                {/* ADMIN */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={closeMenus}
+                    className="
+                        mt-2
+                        flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        px-3
+                        py-3
+                        text-sm
+                        font-medium
+                        text-[#4f5954]
+                      "
+                  >
+                    <LayoutDashboard size={17} />
+                    Trang quản trị
+                  </Link>
+                )}
+
+                {/* PROFILE */}
+                <Link
+                  href="/account/profile"
+                  onClick={closeMenus}
+                  className="
+                      mt-2
+                      flex
+                      items-center
+                      gap-2
+                      rounded-lg
+                      px-3
+                      py-3
+                      text-sm
+                      font-medium
+                      text-[#4f5954]
+                    "
+                >
+                  <UserRound size={17} />
+                  Hồ sơ của tôi
+                </Link>
+
+                {/* VERIFICATION */}
+                {canVerifyAccount && (
+                  <Link
+                    href="/account/verification"
+                    onClick={closeMenus}
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        px-3
+                        py-3
+                        text-sm
+                        font-medium
+                        text-[#4f5954]
+                      "
+                  >
+                    <BadgeCheck size={17} />
+                    Xác minh tài khoản
+                  </Link>
+                )}
+
+                {/* SELLER LISTINGS */}
+                {isSeller && (
+                  <Link
+                    href="/properties/mine"
+                    onClick={closeMenus}
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        px-3
+                        py-3
+                        text-sm
+                        font-medium
+                        text-[#4f5954]
+                      "
+                  >
+                    <ListChecks size={17} />
+                    Tin đăng của tôi
+                  </Link>
+                )}
+
+                {/* FAVORITES */}
+                {canUseFavorites && (
+                  <Link
+                    href="/favorites"
+                    onClick={closeMenus}
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        px-3
+                        py-3
+                        text-sm
+                        font-medium
+                        text-[#4f5954]
+                      "
+                  >
+                    <Bookmark size={17} />
+                    Bất động sản đã lưu
+                  </Link>
+                )}
+
+                {/* LOGOUT */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="
+                      flex
+                      items-center
+                      gap-2
+                      rounded-lg
+                      px-3
+                      py-3
+                      text-left
+                      text-sm
+                      font-medium
+                      text-[#4f5954]
+                    "
+                >
+                  <LogOut size={17} />
+                  Đăng xuất
+                </button>
+              </>
+            )}
+
+            {!authLoading && !user && (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="
+                    mt-2
+                    flex
+                    items-center
+                    gap-2
+                    rounded-lg
+                    px-3
+                    py-3
+                    text-sm
+                    font-medium
+                    text-[#4f5954]
+                  "
+              >
+                <UserRound size={17} />
+                Đăng nhập
+              </Link>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

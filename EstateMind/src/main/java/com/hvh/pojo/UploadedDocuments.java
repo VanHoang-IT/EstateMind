@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -32,45 +31,64 @@ import java.util.Date;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "UploadedDocuments.findAll", query = "SELECT u FROM UploadedDocuments u"),
-    @NamedQuery(name = "UploadedDocuments.findById", query = "SELECT u FROM UploadedDocuments u WHERE u.id = :id"),
-    @NamedQuery(name = "UploadedDocuments.findByFileName", query = "SELECT u FROM UploadedDocuments u WHERE u.fileName = :fileName"),
-    @NamedQuery(name = "UploadedDocuments.findByFilePath", query = "SELECT u FROM UploadedDocuments u WHERE u.filePath = :filePath"),
-    @NamedQuery(name = "UploadedDocuments.findByFileType", query = "SELECT u FROM UploadedDocuments u WHERE u.fileType = :fileType"),
-    @NamedQuery(name = "UploadedDocuments.findByStatus", query = "SELECT u FROM UploadedDocuments u WHERE u.status = :status"),
-    @NamedQuery(name = "UploadedDocuments.findByUploadedDate", query = "SELECT u FROM UploadedDocuments u WHERE u.uploadedDate = :uploadedDate")})
+    @NamedQuery(
+            name = "UploadedDocuments.findById",
+            query = "SELECT u FROM UploadedDocuments u WHERE u.id = :id"),
+    @NamedQuery(
+            name = "UploadedDocuments.findByFileName",
+            query = "SELECT u FROM UploadedDocuments u WHERE u.fileName = :fileName"),
+    @NamedQuery(
+            name = "UploadedDocuments.findByFilePath",
+            query = "SELECT u FROM UploadedDocuments u WHERE u.filePath = :filePath"),
+    @NamedQuery(
+            name = "UploadedDocuments.findByFileType",
+            query = "SELECT u FROM UploadedDocuments u WHERE u.fileType = :fileType"),
+    @NamedQuery(
+            name = "UploadedDocuments.findByStatus",
+            query = "SELECT u FROM UploadedDocuments u WHERE u.status = :status"),
+    @NamedQuery(
+            name = "UploadedDocuments.findByUploadedDate",
+            query = "SELECT u FROM UploadedDocuments u WHERE u.uploadedDate = :uploadedDate")
+})
 public class UploadedDocuments implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 255)
     @Column(name = "file_name")
     private String fileName;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 2147483647)
     @Column(name = "file_path")
     private String filePath;
+
     @Size(max = 50)
     @Column(name = "file_type")
     private String fileType;
+
     @Size(max = 30)
     @Column(name = "status")
     private String status;
+
     @Column(name = "uploaded_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date uploadedDate;
+
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Users userId;
 
-    public UploadedDocuments() {
-    }
+    public UploadedDocuments() {}
 
     public UploadedDocuments(Integer id) {
         this.id = id;
@@ -152,7 +170,8 @@ public class UploadedDocuments implements Serializable {
             return false;
         }
         UploadedDocuments other = (UploadedDocuments) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -162,5 +181,4 @@ public class UploadedDocuments implements Serializable {
     public String toString() {
         return "com.hvh.pojo.UploadedDocuments[ id=" + id + " ]";
     }
-    
 }

@@ -4,26 +4,30 @@
  */
 package com.hvh.controllers;
 
-import java.util.List;
-import org.springframework.http.MediaType;
 import com.hvh.dto.PropertyRequestDTO;
 import com.hvh.pojo.Property;
 import com.hvh.pojo.Users;
 import com.hvh.service.PropertyService;
 import com.hvh.service.UserService;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- *
  * @author acer
  */
 @Controller
@@ -47,7 +51,8 @@ public class AdminPropertyController {
     }
 
     @GetMapping("/{id}")
-    public String editForm(@PathVariable("id") Integer id, Model model, @RequestParam Map<String, String> params) {
+    public String editForm(
+            @PathVariable("id") Integer id, Model model, @RequestParam Map<String, String> params) {
         model.addAttribute("properties", this.propertyService.getProperties(params).getItems());
         try {
             model.addAttribute("property", this.propertyService.getPropertyById(id));
@@ -58,93 +63,57 @@ public class AdminPropertyController {
         return "properties";
     }
 
-    @PostMapping(
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String create(
             @ModelAttribute PropertyRequestDTO dto,
             @RequestParam("mainImage") MultipartFile mainImage,
-            @RequestParam(
-                    value = "propertyImages",
-                    required = false
-            ) List<MultipartFile> propertyImages,
+            @RequestParam(value = "propertyImages", required = false)
+                    List<MultipartFile> propertyImages,
             Authentication auth,
             RedirectAttributes redirect) {
 
         try {
-            Users currentUser = this.userService
-                    .getUserByUsername(auth.getName());
+            Users currentUser = this.userService.getUserByUsername(auth.getName());
 
-            this.propertyService.createProperty(
-                    dto,
-                    currentUser,
-                    mainImage,
-                    propertyImages
-            );
+            this.propertyService.createProperty(dto, currentUser, mainImage, propertyImages);
 
-            redirect.addFlashAttribute(
-                    "successMsg",
-                    "Thêm bất động sản thành công!"
-            );
+            redirect.addFlashAttribute("successMsg", "Thêm bất động sản thành công!");
 
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute(
-                    "errMsg",
-                    e.getMessage()
-            );
+            redirect.addFlashAttribute("errMsg", e.getMessage());
         }
 
         return "redirect:/admin/properties";
     }
 
-    @PostMapping(
-            value = "/{id}",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String update(
             @PathVariable("id") Integer id,
             @ModelAttribute PropertyRequestDTO dto,
-            @RequestParam(
-                    value = "mainImage",
-                    required = false
-            ) MultipartFile mainImage,
-            @RequestParam(
-                    value = "propertyImages",
-                    required = false
-            ) List<MultipartFile> propertyImages,
+            @RequestParam(value = "mainImage", required = false) MultipartFile mainImage,
+            @RequestParam(value = "propertyImages", required = false)
+                    List<MultipartFile> propertyImages,
             Authentication auth,
             RedirectAttributes redirect) {
 
         try {
-            Users currentUser = this.userService
-                    .getUserByUsername(auth.getName());
+            Users currentUser = this.userService.getUserByUsername(auth.getName());
 
-            this.propertyService.updateProperty(
-                    id,
-                    dto,
-                    currentUser,
-                    mainImage,
-                    propertyImages
-            );
+            this.propertyService.updateProperty(id, dto, currentUser, mainImage, propertyImages);
 
             redirect.addFlashAttribute(
-                    "successMsg",
-                    "Cập nhật bất động sản #" + id
-                    + " thành công!"
-            );
+                    "successMsg", "Cập nhật bất động sản #" + id + " thành công!");
 
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute(
-                    "errMsg",
-                    e.getMessage()
-            );
+            redirect.addFlashAttribute("errMsg", e.getMessage());
         }
 
         return "redirect:/admin/properties";
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable("id") Integer id, Authentication auth, RedirectAttributes redirect) {
+    public String delete(
+            @PathVariable("id") Integer id, Authentication auth, RedirectAttributes redirect) {
         try {
             Users currentUser = this.userService.getUserByUsername(auth.getName());
             this.propertyService.deleteProperty(id, currentUser);

@@ -7,11 +7,12 @@ package com.hvh.repository;
 import com.hvh.pojo.CustomerProfile;
 
 /**
- *
  * @author acer
  */
 public interface CustomerProfileRepository {
     CustomerProfile createProfile(CustomerProfile profile);
+
     CustomerProfile getByUserId(int userId);
+
     CustomerProfile updateProfile(CustomerProfile profile);
 }

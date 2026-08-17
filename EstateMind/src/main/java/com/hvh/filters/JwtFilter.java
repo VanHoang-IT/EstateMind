@@ -5,7 +5,6 @@
 package com.hvh.filters;
 
 /**
- *
  * @author acer
  */
 import com.hvh.utils.JwtUtils;
@@ -21,7 +20,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- *
  * @author acer
  */
 public class JwtFilter extends OncePerRequestFilter {
@@ -33,7 +31,8 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(
+            HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
@@ -42,10 +41,12 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = header.substring(7);
             try {
                 String username = JwtUtils.validateTokenAndGetUsername(token);
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (username != null
+                        && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(username, null, userDetails.getAuthorities());
+                            new UsernamePasswordAuthenticationToken(
+                                    username, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {

@@ -22,7 +22,6 @@ function MapClickHandler({
   useMapEvents({
     click(event) {
       const latitude = Number(event.latlng.lat.toFixed(7));
-
       const longitude = Number(event.latlng.lng.toFixed(7));
 
       onChange(latitude, longitude);
@@ -85,9 +84,9 @@ export default function PropertyLocationPicker({
             <Popup>
               Vị trí bất động sản
               <br />
-              Latitude: {latitude}
+              Vĩ độ: {latitude}
               <br />
-              Longitude: {longitude}
+              Kinh độ: {longitude}
             </Popup>
           </CircleMarker>
         )}

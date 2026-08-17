@@ -9,15 +9,20 @@ import java.util.List;
  */
 
 /**
- *
  * @author acer
  */
 public interface UserRepository {
     Users getUserByUsername(String username);
+
     Users getUserById(int id);
+
     Users addUser(Users u);
+
     Users updateUser(Users u);
+
     boolean authenticate(String username, String password);
+
     List<Users> getUsers(Integer page);
+
     Users updateRole(int id, String role);
 }

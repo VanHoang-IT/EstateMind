@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- *
  * @author acer
  */
 @Service
@@ -54,7 +53,9 @@ public class ReviewServiceImpl implements ReviewService {
             throw new IllegalArgumentException("Đánh giá phải từ 1 đến 5 sao");
         }
 
-        Property property = this.propertyService.getPropertyById(dto.getPropertyId()); // throws nếu không tồn tại
+        Property property =
+                this.propertyService.getPropertyById(
+                        dto.getPropertyId()); // throws nếu không tồn tại
 
         Review review = new Review();
         review.setContent(dto.getContent());
@@ -73,7 +74,9 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = this.getReviewById(id);
 
         boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getUserRole());
-        boolean isAuthor = review.getUserId() != null && review.getUserId().getId().equals(currentUser.getId());
+        boolean isAuthor =
+                review.getUserId() != null
+                        && review.getUserId().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isAuthor) {
             throw new RuntimeException("Bạn không có quyền xoá đánh giá này");
@@ -86,5 +89,4 @@ public class ReviewServiceImpl implements ReviewService {
     public List<Review> getReviewsByPropertyId(Integer propertyId) {
         return reviewRepository.getReviewsByPropertyId(propertyId);
     }
-
 }

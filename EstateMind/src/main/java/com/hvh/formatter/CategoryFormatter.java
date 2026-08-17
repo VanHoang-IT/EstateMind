@@ -10,10 +10,9 @@ import java.util.Locale;
 import org.springframework.format.Formatter;
 
 /**
- *
  * @author acer
  */
-public class CategoryFormatter implements Formatter<Category>{
+public class CategoryFormatter implements Formatter<Category> {
 
     @Override
     public String print(Category cate, Locale locale) {
@@ -26,5 +25,4 @@ public class CategoryFormatter implements Formatter<Category>{
         c.setId(Integer.valueOf(cateId));
         return c;
     }
-    
 }

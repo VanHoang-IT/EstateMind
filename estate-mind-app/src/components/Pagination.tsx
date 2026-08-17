@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface Props {
   page: number;
   totalPages: number;
@@ -9,54 +11,77 @@ interface Props {
 export default function Pagination({ page, totalPages, onPageChange }: Props) {
   if (totalPages <= 1) return null;
 
-  // Hiện tối đa 5 số trang xung quanh trang hiện tại, tránh render hàng trăm nút.
   const pages: number[] = [];
   const start = Math.max(1, page - 2);
   const end = Math.min(totalPages, start + 4);
-  for (let p = start; p <= end; p++) pages.push(p);
 
-  const btnBase =
-    "min-w-[36px] h-9 px-2 rounded-md text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+  for (let current = start; current <= end; current++) {
+    pages.push(current);
+  }
+
+  const buttonBase =
+    "grid h-10 min-w-10 place-items-center rounded-lg border px-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35";
 
   return (
-    <nav className="flex justify-center items-center gap-1.5 mt-8" aria-label="Phân trang">
+    <nav
+      className="mt-12 flex items-center justify-center gap-2"
+      aria-label="Phân trang"
+    >
       <button
-        className={`${btnBase} border-gray-300 text-gray-600 hover:bg-gray-50`}
+        type="button"
+        className={`${buttonBase} border-[#d8e0dc] bg-white text-[#59665f] hover:border-brand hover:text-brand`}
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
+        aria-label="Trang trước"
       >
-        ‹
+        <ChevronLeft size={17} />
       </button>
 
       {start > 1 && (
         <>
-          <button className={`${btnBase} border-gray-300 text-gray-600 hover:bg-gray-50`} onClick={() => onPageChange(1)}>
+          <button
+            type="button"
+            className={`${buttonBase} border-[#d8e0dc] bg-white text-[#59665f] hover:border-brand hover:text-brand`}
+            onClick={() => onPageChange(1)}
+            aria-label="Trang 1"
+          >
             1
           </button>
-          {start > 2 && <span className="px-1 text-gray-400">…</span>}
+
+          {start > 2 && (
+            <span className="px-1 text-sm text-[#89938d]">...</span>
+          )}
         </>
       )}
 
-      {pages.map((p) => (
+      {pages.map((current) => (
         <button
-          key={p}
-          className={`${btnBase} ${
-            p === page
-              ? "bg-red-500 border-red-500 text-white"
-              : "border-gray-300 text-gray-700 hover:bg-gray-50"
+          type="button"
+          key={current}
+          aria-label={`Trang ${current}`}
+          aria-current={current === page ? "page" : undefined}
+          className={`${buttonBase} ${
+            current === page
+              ? "border-brand bg-brand text-white"
+              : "border-[#d8e0dc] bg-white text-[#59665f] hover:border-brand hover:text-brand"
           }`}
-          onClick={() => onPageChange(p)}
+          onClick={() => onPageChange(current)}
         >
-          {p}
+          {current}
         </button>
       ))}
 
       {end < totalPages && (
         <>
-          {end < totalPages - 1 && <span className="px-1 text-gray-400">…</span>}
+          {end < totalPages - 1 && (
+            <span className="px-1 text-sm text-[#89938d]">...</span>
+          )}
+
           <button
-            className={`${btnBase} border-gray-300 text-gray-600 hover:bg-gray-50`}
+            type="button"
+            className={`${buttonBase} border-[#d8e0dc] bg-white text-[#59665f] hover:border-brand hover:text-brand`}
             onClick={() => onPageChange(totalPages)}
+            aria-label={`Trang ${totalPages}`}
           >
             {totalPages}
           </button>
@@ -64,11 +89,13 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
       )}
 
       <button
-        className={`${btnBase} border-gray-300 text-gray-600 hover:bg-gray-50`}
+        type="button"
+        className={`${buttonBase} border-[#d8e0dc] bg-white text-[#59665f] hover:border-brand hover:text-brand`}
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
+        aria-label="Trang tiếp theo"
       >
-        ›
+        <ChevronRight size={17} />
       </button>
     </nav>
   );

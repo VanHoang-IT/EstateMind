@@ -1,25 +1,3 @@
-"""
-ingest_to_chroma.py
-====================
-Pipeline Embedding: Postgres -> Chroma.
-
-Đọc dữ liệu từ 2 bảng:
-  - property               -> collection "real-estate-listings"
-  - legal_knowledge_base   -> collection "legal-documents"
-
-Chỉ embed những bản ghi CHƯA có trong `vector_sync_status`, hoặc đã có
-nhưng nội dung thay đổi (so sánh content_hash) -> tránh embed lại toàn
-bộ mỗi lần chạy, tiết kiệm API call tới Gemini.
-
-Cài đặt thêm (ngoài các package đã có sẵn trong pipeline crawl):
-    pip install langchain-google-genai langchain-community langchain-text-splitters chromadb
-
-Chạy:
-    python ingest_to_chroma.py                # embed cả 2 nguồn
-    python ingest_to_chroma.py --source property
-    python ingest_to_chroma.py --source legal
-    python ingest_to_chroma.py --force         # bỏ qua content_hash, embed lại hết
-"""
 
 import argparse
 import hashlib
@@ -47,11 +25,24 @@ CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
 COLLECTION_PROPERTY = "real-estate-listings"
 COLLECTION_LEGAL = "legal-documents"
 
-# Free tier Gemini embed_content: 100 request/phút.
-MAX_RETRIES_429 = 10          # tối đa 10 lần retry (~10 phút) rồi mới bỏ cuộc, tránh treo vô hạn
-RETRY_WAIT_SECONDS = 60       # thời gian nghỉ mỗi lần gặp 429
+# category_id 1-12 = nhà đất BÁN, 13-23 = nhà đất CHO THUÊ.
+# Giá tin thuê là triệu/tháng, khác thang hoàn toàn với giá bán.
+MAX_SALE_CATEGORY_ID = 12
+
+# Chủ động giảm tốc để hạn chế chạm rate limit. Có thể chỉnh bằng biến môi trường.
+REQUEST_DELAY_SECONDS = float(os.getenv("EMBED_REQUEST_DELAY_SECONDS", "2.0"))
+
+# Khi đã chạm 429 liên tục, không retry 10 phút rồi crash.
+# Thử tối đa 3 lần với backoff tăng dần; nếu vẫn 429 thì dừng an toàn.
+RATE_LIMIT_BACKOFF_SECONDS = (60, 120)
+MAX_ATTEMPTS_429 = len(RATE_LIMIT_BACKOFF_SECONDS) + 1
 
 _embeddings = None
+
+
+class RateLimitPause(RuntimeError):
+    """Báo hiệu quota/rate limit chưa hồi; caller sẽ checkpoint và dừng an toàn."""
+
 
 
 def get_embeddings():
@@ -87,29 +78,35 @@ def content_hash(text_value: str) -> str:
 
 def add_documents_with_retry(vectorstore: Chroma, documents: list, ids: list, label: str):
     """
-    Gọi vectorstore.add_documents() với retry khi gặp lỗi 429
-    (RESOURCE_EXHAUSTED). Có giới hạn số lần retry để không treo vô hạn
-    nếu vấn đề không tự hết (vd: hết quota cả ngày).
+    Gọi vectorstore.add_documents() với retry có backoff khi gặp 429.
+
+    Nếu quota vẫn chưa hồi sau số lần thử cho phép, raise RateLimitPause để
+    vòng sync dừng có kiểm soát. Các bản ghi đã sync trước đó vẫn giữ nguyên
+    trong vector_sync_status nên lần chạy sau sẽ tự được bỏ qua.
     """
-    for attempt in range(1, MAX_RETRIES_429 + 1):
+    for attempt in range(1, MAX_ATTEMPTS_429 + 1):
         try:
             vectorstore.add_documents(documents=documents, ids=ids)
             return
         except Exception as e:
             error_msg = str(e)
-            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                logger.warning(
-                    f"  ⚠️ Quá giới hạn API (429) ở {label} "
-                    f"(lần thử {attempt}/{MAX_RETRIES_429}). Nghỉ {RETRY_WAIT_SECONDS}s..."
-                )
-                time.sleep(RETRY_WAIT_SECONDS)
-            else:
-                raise  # lỗi khác 429 -> raise luôn, không retry
+            is_rate_limit = "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg
 
-    raise RuntimeError(
-        f"Đã thử {MAX_RETRIES_429} lần vẫn bị rate limit ở {label}. "
-        f"Dừng script — kiểm tra lại quota/billing trước khi chạy tiếp."
-    )
+            if not is_rate_limit:
+                raise  # lỗi khác 429 -> raise luôn
+
+            if attempt >= MAX_ATTEMPTS_429:
+                raise RateLimitPause(
+                    f"Gemini vẫn trả 429 sau {MAX_ATTEMPTS_429} lần thử ở {label}."
+                ) from e
+
+            wait_seconds = RATE_LIMIT_BACKOFF_SECONDS[attempt - 1]
+            logger.warning(
+                f"  ⚠️ Quá giới hạn API (429) ở {label} "
+                f"(lần thử {attempt}/{MAX_ATTEMPTS_429}). "
+                f"Nghỉ {wait_seconds}s rồi thử lại..."
+            )
+            time.sleep(wait_seconds)
 
 
 # ============================================================
@@ -120,6 +117,7 @@ def fetch_pending_properties(engine, force: bool = False):
     query = """
         SELECT p.id, p.title, p.description, p.address, p.district,
                p.price, p.area, p.bedrooms, p.status, p.legal_verified,
+               p.category_id, p.attributes,
                p.latitude, p.longitude, p.url, p.url_crawl,
                p.created_at, p.crawl_date,
                vs.content_hash AS synced_hash
@@ -133,9 +131,12 @@ def fetch_pending_properties(engine, force: bool = False):
 
     pending = []
     for row in rows:
+        # category_id nằm trong hash: đổi loại hình -> nội dung embed đổi
+        # (bán/thuê hiển thị khác nhau) nên phải embed lại.
         raw = (
             f"{row['title']}|{row['description']}|{row['price']}|"
-            f"{row['area']}|{row['district']}|{row['created_at']}|{row['crawl_date']}"
+            f"{row['area']}|{row['district']}|{row['category_id']}|"
+            f"{row['created_at']}|{row['crawl_date']}"
         )
         current_hash = content_hash(raw)
         if force or row["synced_hash"] != current_hash:
@@ -179,6 +180,54 @@ def _fmt_date(value, with_time: bool = False) -> str:
         return str(value)
 
 
+def _fmt_price(price, is_rent: bool) -> str:
+    """
+    Diễn giải giá bằng tiếng Việt tự nhiên để LLM đọc đúng ngữ nghĩa,
+    thay vì con số thô kiểu 'Giá: 15000000 VNĐ'.
+    """
+    if price is None:
+        return "Giá: Thỏa thuận (liên hệ người đăng)"
+
+    value = float(price)
+
+    if is_rent:
+        trieu = value / 1_000_000
+        return f"Giá thuê: {trieu:,.1f} triệu VNĐ/tháng"
+
+    if value >= 1_000_000_000:
+        ty = value / 1_000_000_000
+        return f"Giá bán: {ty:,.2f} tỷ VNĐ"
+
+    trieu = value / 1_000_000
+    return f"Giá bán: {trieu:,.0f} triệu VNĐ"
+
+
+def _fmt_attributes(raw) -> str:
+    """Đặc điểm bất động sản (JSON) -> dòng text cho LLM đọc."""
+    if not raw:
+        return ""
+
+    import json
+
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError):
+        return ""
+
+    if not isinstance(parsed, dict):
+        return ""
+
+    skip = {"Khoảng giá", "Mức giá", "Giá", "Diện tích", "Số phòng ngủ"}
+
+    parts = [
+        f"{key}: {value}"
+        for key, value in parsed.items()
+        if key not in skip and value
+    ]
+
+    return "; ".join(parts)
+
+
 def build_property_documents(row: dict) -> list[Document]:
     posted_date = _fmt_date(row.get("created_at"))
     crawled_date = _fmt_date(row.get("crawl_date"), with_time=True)
@@ -189,28 +238,53 @@ def build_property_documents(row: dict) -> list[Document]:
     else:
         source_line = f"Nguồn dữ liệu: {source_site}"
 
-    text_content = (
-        f"Tiêu đề: {row['title']}\n"
-        f"Địa chỉ: {row['address']}, {row['district']}\n"
-        f"Giá: {row['price']} VNĐ\n"
-        f"Diện tích: {row['area']} m2\n"
-        f"Số phòng ngủ: {row['bedrooms']}\n"
-        f"Ngày đăng tin: {posted_date}\n"
-        f"{source_line}\n"
-        f"Mô tả: {row['description']}"
-    )
+    category_id = row.get("category_id") or 0
+    is_rent = category_id > MAX_SALE_CATEGORY_ID
+
+    listing_label = "Cho thuê" if is_rent else "Bán"
+    price_line = _fmt_price(row.get("price"), is_rent)
+    specs_line = _fmt_attributes(row.get("attributes"))
+
+    lines = [
+        f"Hình thức: {listing_label}",
+        f"Tiêu đề: {row['title']}",
+        f"Địa chỉ: {row['address']}, {row['district']}",
+        price_line,
+        f"Diện tích: {row['area']} m2",
+        f"Số phòng ngủ: {row['bedrooms']}",
+    ]
+
+    if specs_line:
+        lines.append(f"Đặc điểm: {specs_line}")
+
+    lines.extend([
+        f"Ngày đăng tin: {posted_date}",
+        source_line,
+        f"Mô tả: {row['description']}",
+    ])
+
+    text_content = "\n".join(lines)
+
     metadata = {
         "property_id": row["id"],
-        "price": float(row["price"]) if row["price"] is not None else 0.0,
+        # price = None cho tin Thỏa thuận: Chroma bỏ qua khoá null nên tin
+        # này không lọt vào bộ lọc khoảng giá (trước đây gán 0.0 -> khớp nhầm).
+        "price": float(row["price"]) if row["price"] is not None else None,
         "area": float(row["area"]) if row["area"] is not None else 0.0,
         "district": row["district"] or "",
         "bedrooms": row["bedrooms"] or 0,
+        "category_id": category_id,
+        "listing_type": "THUE" if is_rent else "BAN",
         "legal_verified": bool(row["legal_verified"]),
         "url": row["url"] or "",
         "source_site": source_site,
         "posted_date": posted_date,
         "crawled_date": crawled_date,
     }
+
+    # Chroma không nhận giá trị None trong metadata -> loại bỏ khoá null.
+    metadata = {k: v for k, v in metadata.items() if v is not None}
+
     chunks = _splitter.split_text(text_content)
     return [
         Document(page_content=chunk, metadata={**metadata, "chunk_index": i})
@@ -264,13 +338,25 @@ def upsert_vector_sync_status(engine, source_table: str, source_id: int, vector_
         )
 
 
-def sync_properties(engine, force: bool = False):
+def sync_properties(engine, force: bool = False) -> bool:
     pending = fetch_pending_properties(engine, force=force)
     if not pending:
         logger.info("Không có property nào cần embed (đã đồng bộ đầy đủ).")
-        return
+        return True
 
-    logger.info(f"Cần embed {len(pending)} property...")
+    rent_count = sum(
+        1 for r in pending if (r.get("category_id") or 0) > MAX_SALE_CATEGORY_ID
+    )
+    total_pending = len(pending)
+    completed = 0
+
+    logger.info(
+        f"Cần embed {total_pending} property "
+        f"({total_pending - rent_count} bán / {rent_count} cho thuê)..."
+    )
+    logger.info(
+        "Resume đang bật: property có content_hash khớp trong vector_sync_status sẽ được bỏ qua."
+    )
     vectorstore = get_vectorstore(COLLECTION_PROPERTY)
 
     for row in pending:
@@ -285,21 +371,57 @@ def sync_properties(engine, force: bool = False):
         docs = build_property_documents(row)
         ids = [f"{vector_id_prefix}_chunk{i}" for i in range(len(docs))]
 
-        add_documents_with_retry(vectorstore, docs, ids, label=f"property id={property_id}")
+        try:
+            add_documents_with_retry(
+                vectorstore, docs, ids, label=f"property id={property_id}"
+            )
+        except RateLimitPause as e:
+            # Đảm bảo property đang lỗi không bị xem là đã sync.
+            try:
+                vectorstore.delete(where={"property_id": property_id})
+            except Exception:
+                pass
 
-        upsert_vector_sync_status(engine, "property", property_id, vector_id_prefix, row["content_hash"])
-        logger.info(f"  ✅ Embedded property id={property_id} ({len(docs)} chunks)")
+            remaining = total_pending - completed
+            logger.error(f"⏸️ {e}")
+            logger.error("⏸️ DỪNG AN TOÀN DO QUOTA/RATE LIMIT — KHÔNG MẤT CHECKPOINT.")
+            logger.info(f"   ✅ Đã hoàn thành trong lần chạy này : {completed}/{total_pending}")
+            logger.info(f"   ⏳ Còn lại tối đa                 : {remaining} property")
+            logger.info(f"   Property đang chờ               : id={property_id}")
+            logger.info(
+                "   Chạy lại cùng lệnh sau khi quota hồi; các property đã sync sẽ tự động SKIP."
+            )
+            if force:
+                logger.warning(
+                    "   Bạn đang dùng --force. Để RESUME phần còn thiếu, hãy chạy lại KHÔNG có --force."
+                )
+            return False
 
-    logger.info(f"Hoàn tất embed {len(pending)} property.")
+        upsert_vector_sync_status(
+            engine, "property", property_id, vector_id_prefix, row["content_hash"]
+        )
+        completed += 1
+        logger.info(
+            f"  ✅ Embedded property id={property_id} ({len(docs)} chunks) "
+            f"[{completed}/{total_pending}]"
+        )
+
+        if REQUEST_DELAY_SECONDS > 0:
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+    logger.info(f"Hoàn tất embed {completed}/{total_pending} property.")
+    return True
 
 
-def sync_legal_documents(engine, force: bool = False):
+def sync_legal_documents(engine, force: bool = False) -> bool:
     pending = fetch_pending_legal_docs(engine, force=force)
     if not pending:
         logger.info("Không có legal_knowledge_base nào cần embed (đã đồng bộ đầy đủ).")
-        return
+        return True
 
-    logger.info(f"Cần embed {len(pending)} văn bản luật...")
+    total_pending = len(pending)
+    completed = 0
+    logger.info(f"Cần embed {total_pending} văn bản luật...")
     vectorstore = get_vectorstore(COLLECTION_LEGAL)
 
     for row in pending:
@@ -314,19 +436,52 @@ def sync_legal_documents(engine, force: bool = False):
         docs = build_legal_documents(row)
         ids = [f"{vector_id_prefix}_chunk{i}" for i in range(len(docs))]
 
-        add_documents_with_retry(vectorstore, docs, ids, label=f"legal doc id={legal_id}")
+        try:
+            add_documents_with_retry(
+                vectorstore, docs, ids, label=f"legal doc id={legal_id}"
+            )
+        except RateLimitPause as e:
+            try:
+                vectorstore.delete(where={"legal_document_id": legal_id})
+            except Exception:
+                pass
 
-        upsert_vector_sync_status(engine, "legal_knowledge_base", legal_id, vector_id_prefix, row["content_hash"])
-        logger.info(f"  ✅ Embedded legal doc id={legal_id} ({len(docs)} chunks)")
+            remaining = total_pending - completed
+            logger.error(f"⏸️ {e}")
+            logger.error("⏸️ DỪNG AN TOÀN DO QUOTA/RATE LIMIT — KHÔNG MẤT CHECKPOINT.")
+            logger.info(f"   ✅ Đã hoàn thành trong lần chạy này : {completed}/{total_pending}")
+            logger.info(f"   ⏳ Còn lại tối đa                 : {remaining} văn bản")
+            logger.info(f"   Văn bản đang chờ                 : id={legal_id}")
+            logger.info(
+                "   Chạy lại cùng lệnh sau khi quota hồi; các văn bản đã sync sẽ tự động SKIP."
+            )
+            if force:
+                logger.warning(
+                    "   Bạn đang dùng --force. Để RESUME phần còn thiếu, hãy chạy lại KHÔNG có --force."
+                )
+            return False
 
-    logger.info(f"Hoàn tất embed {len(pending)} văn bản luật.")
+        upsert_vector_sync_status(
+            engine, "legal_knowledge_base", legal_id, vector_id_prefix, row["content_hash"]
+        )
+        completed += 1
+        logger.info(
+            f"  ✅ Embedded legal doc id={legal_id} ({len(docs)} chunks) "
+            f"[{completed}/{total_pending}]"
+        )
+
+        if REQUEST_DELAY_SECONDS > 0:
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+    logger.info(f"Hoàn tất embed {completed}/{total_pending} văn bản luật.")
+    return True
 
 
 # ============================================================
 # MAIN
 # ============================================================
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description="Đồng bộ embedding Postgres -> Chroma")
     parser.add_argument(
         "--source", choices=["property", "legal", "all"], default="all",
@@ -340,14 +495,31 @@ def main():
 
     engine = get_engine()
 
+    if args.force:
+        logger.warning(
+            "⚠️ --force đang bật: toàn bộ bản ghi được chọn sẽ bị embed lại. "
+            "Không dùng --force khi chỉ muốn RESUME sau rate limit."
+        )
+
     if args.source in ("property", "all"):
-        sync_properties(engine, force=args.force)
+        property_done = sync_properties(engine, force=args.force)
+        if not property_done:
+            logger.warning(
+                "Kết thúc sớm nhưng an toàn. Hãy chạy lại sau khi quota Gemini phục hồi."
+            )
+            return 2
 
     if args.source in ("legal", "all"):
-        sync_legal_documents(engine, force=args.force)
+        legal_done = sync_legal_documents(engine, force=args.force)
+        if not legal_done:
+            logger.warning(
+                "Kết thúc sớm nhưng an toàn. Hãy chạy lại sau khi quota Gemini phục hồi."
+            )
+            return 2
 
     logger.info("🎉 HOÀN TẤT ĐỒNG BỘ EMBEDDING!")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

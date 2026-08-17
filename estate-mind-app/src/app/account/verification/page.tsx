@@ -82,13 +82,13 @@ function getCompanyLabel(profile: SellerVerificationProfile) {
     return (
       profile.companyId.name ||
       (profile.companyId.id
-        ? `Doanh nghiệp #${profile.companyId.id}`
+        ? `Công ty #${profile.companyId.id}`
         : "Chưa liên kết")
     );
   }
 
   if (typeof profile.companyId === "number") {
-    return `Doanh nghiệp #${profile.companyId}`;
+    return `Công ty #${profile.companyId}`;
   }
 
   return "Chưa liên kết";
@@ -156,18 +156,14 @@ export default function AccountVerificationPage() {
       const result = (await response.json()) as VerificationProfileResponse;
 
       if (result.role !== "ROLE_CUSTOMER" && result.role !== "ROLE_SELLER") {
-        throw new Error("Vai trò tài khoản không hỗ trợ trang xác minh.");
+        throw new Error("Vai trò tài khoản này không hỗ trợ xác minh.");
       }
 
       setData(result);
       setError(null);
-    } catch (requestError) {
+    } catch {
       setData(null);
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Không thể tải hồ sơ xác minh.",
-      );
+      setError("Không thể tải hồ sơ xác minh. Vui lòng thử lại.");
     } finally {
       setLoadingProfile(false);
     }
@@ -226,21 +222,21 @@ export default function AccountVerificationPage() {
             href="/"
             className="text-sm font-medium text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
           >
-            ← Về trang chủ
+            ← Về Trang chủ
           </Link>
 
           <Link
             href="/account/profile"
             className="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            Thông tin tài khoản
+            Hồ sơ tài khoản
           </Link>
         </div>
 
         <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="border-b border-gray-200 px-6 py-5 dark:border-slate-800">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Xác nhận tài khoản
+              Xác minh tài khoản
             </h1>
 
             <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
@@ -275,7 +271,7 @@ export default function AccountVerificationPage() {
                     </p>
 
                     <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
-                      {isCustomer ? "Người mua" : "Người bán"}
+                      {isCustomer ? "Khách hàng" : "Người bán"}
                     </p>
                   </div>
 
@@ -339,8 +335,10 @@ function CustomerVerificationSection({
 
       await onSaved();
       setEditing(false);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Không thể lưu hồ sơ.");
+    } catch {
+      setSaveError(
+        "Không thể lưu hồ sơ xác minh. Vui lòng kiểm tra thông tin và thử lại.",
+      );
     } finally {
       setSaving(false);
     }
@@ -351,11 +349,12 @@ function CustomerVerificationSection({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Hồ sơ người mua
+            Xác minh khách hàng
           </h2>
 
           <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-            Cập nhật địa chỉ và giấy tờ định danh để được xác minh.
+            Cập nhật địa chỉ và thông tin giấy tờ tùy thân để xác minh tài
+            khoản.
           </p>
         </div>
 
@@ -370,7 +369,7 @@ function CustomerVerificationSection({
             }}
             className="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
           >
-            Cập nhật hồ sơ
+            Chỉnh sửa xác minh
           </button>
         )}
       </div>
@@ -386,23 +385,23 @@ function CustomerVerificationSection({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="Nhập địa chỉ..."
+              placeholder="Nhập địa chỉ của bạn..."
             />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-              Số giấy tờ định danh
+              Số giấy tờ tùy thân
             </label>
             <input
               type="text"
               value={identityNumber}
               onChange={(e) => setIdentityNumber(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="CCCD/CMND..."
+              placeholder="Số CCCD/CMND hoặc giấy tờ tùy thân..."
             />
             <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-              Thay đổi số giấy tờ sẽ yêu cầu xác minh lại từ đầu.
+              Thay đổi số giấy tờ tùy thân sẽ yêu cầu xác minh lại.
             </p>
           </div>
 
@@ -419,7 +418,7 @@ function CustomerVerificationSection({
               disabled={saving}
               className="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-60"
             >
-              {saving ? "Đang lưu..." : "Lưu hồ sơ"}
+              {saving ? "Đang lưu..." : "Lưu thông tin xác minh"}
             </button>
 
             <button
@@ -428,7 +427,7 @@ function CustomerVerificationSection({
               disabled={saving}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Huỷ
+              Hủy
             </button>
           </div>
         </div>
@@ -437,12 +436,12 @@ function CustomerVerificationSection({
           <InfoItem label="Mã hồ sơ" value={profile.id} />
 
           <InfoItem
-            label="Trạng thái định danh"
+            label="Trạng thái xác minh danh tính"
             value={profile.identityVerified ? "Đã xác minh" : "Chưa xác minh"}
           />
 
           <InfoItem
-            label="Số giấy tờ định danh"
+            label="Số giấy tờ tùy thân"
             value={maskIdentityNumber(profile.identityNumber)}
           />
 
@@ -451,13 +450,10 @@ function CustomerVerificationSection({
             value={profile.address || "Chưa cập nhật"}
           />
 
-          <InfoItem
-            label="Ngày tạo hồ sơ"
-            value={formatDate(profile.createdAt)}
-          />
+          <InfoItem label="Ngày tạo" value={formatDate(profile.createdAt)} />
 
           <InfoItem
-            label="Cập nhật gần nhất"
+            label="Cập nhật lần cuối"
             value={formatDate(profile.updatedAt)}
           />
         </dl>
@@ -465,8 +461,8 @@ function CustomerVerificationSection({
 
       {!editing && !profile.identityVerified && (
         <div className="mt-6 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-          Tài khoản người mua chưa được xác minh danh tính. Cần bổ sung địa chỉ
-          và giấy tờ định danh, sau đó chờ quản trị viên xét duyệt.
+          Tài khoản khách hàng này chưa được xác minh danh tính. Hãy bổ sung địa
+          chỉ và thông tin giấy tờ tùy thân, sau đó chờ quản trị viên phê duyệt.
         </div>
       )}
     </div>
@@ -505,7 +501,7 @@ function SellerVerificationSection({
       trimmedCompanyId &&
       (!Number.isInteger(parsedCompanyId) || (parsedCompanyId as number) <= 0)
     ) {
-      setSaveError("Mã doanh nghiệp phải là số nguyên dương.");
+      setSaveError("Mã công ty phải là số nguyên dương.");
       setSaving(false);
       return;
     }
@@ -518,8 +514,10 @@ function SellerVerificationSection({
 
       await onSaved();
       setEditing(false);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Không thể lưu hồ sơ.");
+    } catch {
+      setSaveError(
+        "Không thể lưu hồ sơ xác minh. Vui lòng kiểm tra thông tin và thử lại.",
+      );
     } finally {
       setSaving(false);
     }
@@ -530,11 +528,11 @@ function SellerVerificationSection({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Hồ sơ người bán
+            Xác minh người bán
           </h2>
 
           <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-            Cập nhật giới thiệu và doanh nghiệp liên kết.
+            Cập nhật phần giới thiệu và thông tin công ty liên kết.
           </p>
         </div>
 
@@ -548,7 +546,7 @@ function SellerVerificationSection({
             }}
             className="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
           >
-            Cập nhật hồ sơ
+            Chỉnh sửa xác minh
           </button>
         )}
       </div>
@@ -564,13 +562,13 @@ function SellerVerificationSection({
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="Giới thiệu về bạn hoặc doanh nghiệp..."
+              placeholder="Giới thiệu về bạn hoặc công ty của bạn..."
             />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-              Mã doanh nghiệp (tuỳ chọn)
+              Mã công ty (không bắt buộc)
             </label>
             <input
               type="number"
@@ -578,7 +576,7 @@ function SellerVerificationSection({
               value={companyIdInput}
               onChange={(e) => setCompanyIdInput(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="Nhập ID doanh nghiệp..."
+              placeholder="Nhập mã công ty..."
             />
           </div>
 
@@ -595,7 +593,7 @@ function SellerVerificationSection({
               disabled={saving}
               className="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-60"
             >
-              {saving ? "Đang lưu..." : "Lưu hồ sơ"}
+              {saving ? "Đang lưu..." : "Lưu thông tin xác minh"}
             </button>
 
             <button
@@ -604,7 +602,7 @@ function SellerVerificationSection({
               disabled={saving}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Huỷ
+              Hủy
             </button>
           </div>
         </div>
@@ -613,7 +611,7 @@ function SellerVerificationSection({
           <InfoItem label="Mã hồ sơ" value={profile.id} />
 
           <InfoItem
-            label="Trạng thái người bán"
+            label="Trạng thái xác minh người bán"
             value={profile.isVerified ? "Đã xác minh" : "Chưa xác minh"}
           />
 
@@ -622,7 +620,7 @@ function SellerVerificationSection({
             value={formatDate(profile.verifiedAt)}
           />
 
-          <InfoItem label="Doanh nghiệp" value={getCompanyLabel(profile)} />
+          <InfoItem label="Công ty" value={getCompanyLabel(profile)} />
 
           <InfoItem
             label="Điểm đánh giá trung bình"
@@ -638,13 +636,10 @@ function SellerVerificationSection({
             value={profile.totalProperties ?? 0}
           />
 
-          <InfoItem
-            label="Ngày tạo hồ sơ"
-            value={formatDate(profile.createdAt)}
-          />
+          <InfoItem label="Ngày tạo" value={formatDate(profile.createdAt)} />
 
           <InfoItem
-            label="Cập nhật gần nhất"
+            label="Cập nhật lần cuối"
             value={formatDate(profile.updatedAt)}
           />
 
@@ -658,8 +653,8 @@ function SellerVerificationSection({
 
       {!editing && !profile.isVerified && (
         <div className="mt-6 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-          Tài khoản người bán chưa được xác minh. Hồ sơ cần được quản trị viên
-          kiểm tra trước khi hiển thị trạng thái đã xác minh.
+          Tài khoản người bán này chưa được xác minh. Hồ sơ cần được quản trị
+          viên xem xét trước khi trạng thái đã xác minh được hiển thị.
         </div>
       )}
     </div>

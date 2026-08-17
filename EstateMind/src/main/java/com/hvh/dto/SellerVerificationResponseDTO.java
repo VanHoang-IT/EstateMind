@@ -6,18 +6,26 @@ import java.util.Date;
 public class SellerVerificationResponseDTO {
 
     private Integer id;
+
     private String bio;
+
     private Boolean isVerified;
+
     private Date verifiedAt;
+
     private BigDecimal ratingAvg;
+
     private Integer totalProperties;
+
     private Integer companyId;
+
     private String companyName;
+
     private Date createdAt;
+
     private Date updatedAt;
 
-    public SellerVerificationResponseDTO() {
-    }
+    public SellerVerificationResponseDTO() {}
 
     public SellerVerificationResponseDTO(
             Integer id,

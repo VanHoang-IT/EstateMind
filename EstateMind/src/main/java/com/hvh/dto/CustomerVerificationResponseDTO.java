@@ -5,14 +5,18 @@ import java.util.Date;
 public class CustomerVerificationResponseDTO {
 
     private Integer id;
+
     private String address;
+
     private String identityNumber;
+
     private Boolean identityVerified;
+
     private Date createdAt;
+
     private Date updatedAt;
 
-    public CustomerVerificationResponseDTO() {
-    }
+    public CustomerVerificationResponseDTO() {}
 
     public CustomerVerificationResponseDTO(
             Integer id,

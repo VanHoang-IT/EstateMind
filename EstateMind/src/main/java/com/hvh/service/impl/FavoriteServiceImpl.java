@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 /**
- *
  * @author acer
  */
 @Service
@@ -29,8 +29,7 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     @Override
     public List<Property> getFavoriteProperties(Users user) {
-        return this.favoriteRepo.getByUser(user.getId())
-                .stream()
+        return this.favoriteRepo.getByUser(user.getId()).stream()
                 .map(Favorites::getPropertyId)
                 .collect(Collectors.toList());
     }
@@ -45,7 +44,8 @@ public class FavoriteServiceImpl implements FavoriteService {
         if (this.isFavorited(user, propertyId)) {
             return; // đã lưu rồi thì thôi, không lỗi
         }
-        Property property = this.propertyService.getPropertyById(propertyId); // throws nếu không tồn tại
+        Property property =
+                this.propertyService.getPropertyById(propertyId); // throws nếu không tồn tại
 
         Favorites f = new Favorites();
         f.setUserId(user);
@@ -58,4 +58,3 @@ public class FavoriteServiceImpl implements FavoriteService {
         this.favoriteRepo.remove(user.getId(), propertyId);
     }
 }
-

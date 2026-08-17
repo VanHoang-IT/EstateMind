@@ -5,7 +5,6 @@
 package com.hvh.configs;
 
 /**
- *
  * @author acer
  */
 import com.hvh.filters.JwtFilter;
@@ -23,38 +22,42 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-
-
 @Configuration
 @Order(1)
 public class ApiSecurityConfigs {
     @Autowired
     private UserDetailsService userDetailsService;
-    
+
     @Bean
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
 
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .securityMatcher("/api/**")
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/secure/**").authenticated()
-                    .anyRequest().permitAll()
-            ).addFilterBefore(new JwtFilter(userDetailsService), UsernamePasswordAuthenticationFilter.class);
+                .securityMatcher("/api/**")
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/api/secure/**")
+                                        .authenticated()
+                                        .anyRequest()
+                                        .permitAll())
+                .addFilterBefore(
+                        new JwtFilter(userDetailsService),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:3000")); 
+        config.setAllowedOrigins(List.of("http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true); 
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

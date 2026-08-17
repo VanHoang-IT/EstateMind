@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import {
-  Geist,
-  Geist_Mono,
-} from "next/font/google";
-
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import Header from "@/components/Header";
@@ -21,38 +17,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const themeScript = `
-  (() => {
-    try {
-      const savedTheme =
-        localStorage.getItem("estate-theme");
-
-      const prefersDark =
-        window.matchMedia(
-          "(prefers-color-scheme: dark)"
-        ).matches;
-
-      const isDark =
-        savedTheme === "dark" ||
-        (!savedTheme && prefersDark);
-
-      document.documentElement.classList.toggle(
-        "dark",
-        isDark
-      );
-
-      document.documentElement.style.colorScheme =
-        isDark ? "dark" : "light";
-    } catch {
-      // Giữ chế độ sáng nếu localStorage không khả dụng.
-    }
-  })();
-`;
-
 export const metadata: Metadata = {
-  title: "Batdongsan - Nền tảng BĐS số 1",
+  title: {
+    default: "EstateMind",
+    template: "%s | EstateMind",
+  },
   description:
-    "Tìm kiếm nhà đất, căn hộ nhanh chóng và chính xác.",
+    "Khám phá bất động sản, so sánh tin đăng và tìm không gian sống phù hợp với nhu cầu của bạn.",
 };
 
 export default function RootLayout({
@@ -61,34 +32,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="vi"
-      suppressHydrationWarning
-    >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: themeScript,
-          }}
-        />
-      </head>
-
+    <html lang="vi">
       <body
-        className={`
-          ${geistSans.variable}
-          ${geistMono.variable}
-          min-h-screen
-          bg-background
-          text-foreground
-          antialiased
-        `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <Header />
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
 
-          {children}
-
-          <Footer />
           <ChatWidget />
         </AuthProvider>
       </body>

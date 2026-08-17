@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 import { useAuth } from "@/contexts/AuthContext";
 
 type RegisterForm = {
@@ -27,43 +28,81 @@ const initialForm: RegisterForm = {
 
 function getReadableError(error: unknown): string {
   if (!(error instanceof Error)) {
-    return "Đăng ký thất bại";
+    return "Registration failed. Please try again.";
   }
 
   const rawMessage = error.message?.trim();
 
   if (!rawMessage) {
-    return "Đăng ký thất bại";
+    return "Registration failed. Please try again.";
   }
 
-  // Trường hợp backend/Tomcat trả nguyên trang HTML lỗi.
-  if (
-    rawMessage.includes("<!doctype html") ||
-    rawMessage.includes("<html")
-  ) {
+  let message = rawMessage;
+
+  if (rawMessage.includes("<!doctype html") || rawMessage.includes("<html")) {
     const documentHtml = new DOMParser().parseFromString(
       rawMessage,
-      "text/html"
+      "text/html",
     );
 
-    const paragraphs = Array.from(
-      documentHtml.querySelectorAll("p")
-    );
+    const paragraphs = Array.from(documentHtml.querySelectorAll("p"));
 
     const messageParagraph = paragraphs.find(
       (paragraph) =>
-        paragraph.querySelector("b")?.textContent?.trim() ===
-        "Message"
+        paragraph.querySelector("b")?.textContent?.trim() === "Message",
     );
 
-    const message = messageParagraph?.textContent
-      ?.replace(/^Message\s*/i, "")
-      .trim();
-
-    return message || "Đăng ký thất bại";
+    message =
+      messageParagraph?.textContent?.replace(/^Message\s*/i, "").trim() || "";
   }
 
-  return rawMessage;
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("tên đăng nhập") || normalized.includes("username")) {
+    if (
+      normalized.includes("tồn tại") ||
+      normalized.includes("đã được sử dụng") ||
+      normalized.includes("already") ||
+      normalized.includes("exists") ||
+      normalized.includes("taken")
+    ) {
+      return "This username is already in use.";
+    }
+  }
+
+  if (normalized.includes("email")) {
+    if (
+      normalized.includes("tồn tại") ||
+      normalized.includes("đã được sử dụng") ||
+      normalized.includes("already") ||
+      normalized.includes("exists") ||
+      normalized.includes("used")
+    ) {
+      return "This email address is already in use.";
+    }
+  }
+
+  if (normalized.includes("số điện thoại") || normalized.includes("phone")) {
+    if (
+      normalized.includes("tồn tại") ||
+      normalized.includes("đã được sử dụng") ||
+      normalized.includes("already") ||
+      normalized.includes("exists") ||
+      normalized.includes("used")
+    ) {
+      return "This phone number is already in use.";
+    }
+  }
+
+  if (
+    normalized.includes("chỉ được đăng ký") ||
+    normalized.includes("customer hoặc seller") ||
+    normalized.includes("customer or seller")
+  ) {
+    return "Please choose either Customer or Seller as your account type.";
+  }
+
+  return message || "Registration failed. Please try again.";
 }
 
 export default function RegisterPage() {
@@ -71,17 +110,18 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<RegisterForm>(initialForm);
-  const [role, setRole] =
-    useState<"CUSTOMER" | "SELLER">("CUSTOMER");
+
+  const [role, setRole] = useState<"CUSTOMER" | "SELLER">("CUSTOMER");
+
   const [avatar, setAvatar] = useState<File | null>(null);
+
   const [errors, setErrors] = useState<FieldErrors>({});
+
   const [error, setError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
 
-  function update(
-    key: keyof RegisterForm,
-    value: string
-  ) {
+  function update(key: keyof RegisterForm, value: string) {
     setForm((current) => ({
       ...current,
       [key]: value,
@@ -99,55 +139,43 @@ export default function RegisterPage() {
     const nextErrors: FieldErrors = {};
 
     if (!form.lastName.trim()) {
-      nextErrors.lastName = "Vui lòng nhập họ";
+      nextErrors.lastName = "Please enter your last name.";
     }
 
     if (!form.firstName.trim()) {
-      nextErrors.firstName = "Vui lòng nhập tên";
+      nextErrors.firstName = "Please enter your first name.";
     }
 
     if (!form.username.trim()) {
-      nextErrors.username =
-        "Vui lòng nhập tên đăng nhập";
+      nextErrors.username = "Please enter a username.";
     }
 
     if (!form.password.trim()) {
-      nextErrors.password = "Vui lòng nhập mật khẩu";
+      nextErrors.password = "Please enter a password.";
     } else if (form.password.length < 6) {
-      nextErrors.password =
-        "Mật khẩu phải có ít nhất 6 ký tự";
+      nextErrors.password = "Password must be at least 6 characters.";
     }
 
     const phone = form.phone.replace(/[\s.-]/g, "");
 
     if (!phone) {
-      nextErrors.phone =
-        "Vui lòng nhập số điện thoại";
+      nextErrors.phone = "Please enter your phone number.";
     } else if (!/^[0-9]{9,11}$/.test(phone)) {
-      nextErrors.phone =
-        "Số điện thoại phải gồm 9–11 chữ số";
+      nextErrors.phone = "Phone number must contain 9–11 digits.";
     }
 
     if (!form.email.trim()) {
-      nextErrors.email = "Vui lòng nhập email";
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        form.email.trim()
-      )
-    ) {
-      nextErrors.email =
-        "Địa chỉ email không hợp lệ";
+      nextErrors.email = "Please enter your email address.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      nextErrors.email = "Please enter a valid email address.";
     }
 
     if (!avatar) {
-      nextErrors.avatar =
-        "Vui lòng chọn ảnh đại diện";
+      nextErrors.avatar = "Please select a profile picture.";
     } else if (!avatar.type.startsWith("image/")) {
-      nextErrors.avatar =
-        "Tệp được chọn phải là hình ảnh";
+      nextErrors.avatar = "The selected file must be an image.";
     } else if (avatar.size > 5 * 1024 * 1024) {
-      nextErrors.avatar =
-        "Ảnh đại diện không được vượt quá 5 MB";
+      nextErrors.avatar = "Profile picture must not exceed 5 MB.";
     }
 
     setErrors(nextErrors);
@@ -166,10 +194,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (
-      normalized.includes("số điện thoại") ||
-      normalized.includes("phone")
-    ) {
+    if (normalized.includes("phone") || normalized.includes("số điện thoại")) {
       setErrors((current) => ({
         ...current,
         phone: message,
@@ -178,8 +203,8 @@ export default function RegisterPage() {
     }
 
     if (
-      normalized.includes("tên đăng nhập") ||
-      normalized.includes("username")
+      normalized.includes("username") ||
+      normalized.includes("tên đăng nhập")
     ) {
       setErrors((current) => ({
         ...current,
@@ -188,10 +213,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (
-      normalized.includes("mật khẩu") ||
-      normalized.includes("password")
-    ) {
+    if (normalized.includes("password") || normalized.includes("mật khẩu")) {
       setErrors((current) => ({
         ...current,
         password: message,
@@ -199,28 +221,10 @@ export default function RegisterPage() {
       return;
     }
 
-    if (normalized.includes("họ")) {
-      setErrors((current) => ({
-        ...current,
-        lastName: message,
-      }));
-      return;
-    }
-
-    if (normalized.includes("tên")) {
-      setErrors((current) => ({
-        ...current,
-        firstName: message,
-      }));
-      return;
-    }
-
     setError(message);
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
@@ -249,6 +253,7 @@ export default function RegisterPage() {
       router.push("/");
     } catch (caughtError) {
       const message = getReadableError(caughtError);
+
       showServerError(message);
     } finally {
       setLoading(false);
@@ -267,41 +272,32 @@ export default function RegisterPage() {
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-md border border-gray-200 bg-white p-6 shadow-sm">
         <h1 className="mb-6 text-center text-xl font-bold text-gray-900">
-          Đăng ký tài khoản
+          Create Account
         </h1>
 
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="space-y-4"
-        >
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {/* NAME */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
                 htmlFor="lastName"
                 className="mb-1 block text-sm text-gray-600"
               >
-                Họ
+                Last Name
               </label>
 
               <input
                 id="lastName"
                 name="lastName"
                 value={form.lastName}
-                onChange={(event) =>
-                  update("lastName", event.target.value)
-                }
+                onChange={(event) => update("lastName", event.target.value)}
                 autoComplete="family-name"
                 aria-invalid={Boolean(errors.lastName)}
-                className={inputClass(
-                  Boolean(errors.lastName)
-                )}
+                className={inputClass(Boolean(errors.lastName))}
               />
 
               {errors.lastName && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.lastName}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
               )}
             </div>
 
@@ -310,34 +306,29 @@ export default function RegisterPage() {
                 htmlFor="firstName"
                 className="mb-1 block text-sm text-gray-600"
               >
-                Tên
+                First Name
               </label>
 
               <input
                 id="firstName"
                 name="firstName"
                 value={form.firstName}
-                onChange={(event) =>
-                  update("firstName", event.target.value)
-                }
+                onChange={(event) => update("firstName", event.target.value)}
                 autoComplete="given-name"
                 aria-invalid={Boolean(errors.firstName)}
-                className={inputClass(
-                  Boolean(errors.firstName)
-                )}
+                className={inputClass(Boolean(errors.firstName))}
               />
 
               {errors.firstName && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.firstName}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
               )}
             </div>
           </div>
 
+          {/* ROLE */}
           <div>
             <label className="mb-1 block text-sm text-gray-600">
-              Bạn đăng ký với vai trò
+              Account Type
             </label>
 
             <div className="grid grid-cols-2 gap-3">
@@ -350,7 +341,7 @@ export default function RegisterPage() {
                     : "border-gray-300 text-gray-600 hover:border-gray-400"
                 }`}
               >
-                Người mua/thuê
+                Buyer / Renter
               </button>
 
               <button
@@ -362,46 +353,42 @@ export default function RegisterPage() {
                     : "border-gray-300 text-gray-600 hover:border-gray-400"
                 }`}
               >
-                Người bán/môi giới
+                Seller / Agent
               </button>
             </div>
           </div>
 
+          {/* USERNAME */}
           <div>
             <label
               htmlFor="username"
               className="mb-1 block text-sm text-gray-600"
             >
-              Tên đăng nhập
+              Username
             </label>
 
             <input
               id="username"
               name="username"
               value={form.username}
-              onChange={(event) =>
-                update("username", event.target.value)
-              }
+              onChange={(event) => update("username", event.target.value)}
               autoComplete="username"
               aria-invalid={Boolean(errors.username)}
-              className={inputClass(
-                Boolean(errors.username)
-              )}
+              className={inputClass(Boolean(errors.username))}
             />
 
             {errors.username && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.username}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.username}</p>
             )}
           </div>
 
+          {/* PASSWORD */}
           <div>
             <label
               htmlFor="password"
               className="mb-1 block text-sm text-gray-600"
             >
-              Mật khẩu
+              Password
             </label>
 
             <input
@@ -409,29 +396,21 @@ export default function RegisterPage() {
               name="password"
               type="password"
               value={form.password}
-              onChange={(event) =>
-                update("password", event.target.value)
-              }
+              onChange={(event) => update("password", event.target.value)}
               autoComplete="new-password"
               aria-invalid={Boolean(errors.password)}
-              className={inputClass(
-                Boolean(errors.password)
-              )}
+              className={inputClass(Boolean(errors.password))}
             />
 
             {errors.password && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.password}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.password}</p>
             )}
           </div>
 
+          {/* PHONE */}
           <div>
-            <label
-              htmlFor="phone"
-              className="mb-1 block text-sm text-gray-600"
-            >
-              Số điện thoại
+            <label htmlFor="phone" className="mb-1 block text-sm text-gray-600">
+              Phone Number
             </label>
 
             <input
@@ -440,28 +419,20 @@ export default function RegisterPage() {
               type="tel"
               inputMode="numeric"
               value={form.phone}
-              onChange={(event) =>
-                update("phone", event.target.value)
-              }
+              onChange={(event) => update("phone", event.target.value)}
               autoComplete="tel"
               aria-invalid={Boolean(errors.phone)}
-              className={inputClass(
-                Boolean(errors.phone)
-              )}
+              className={inputClass(Boolean(errors.phone))}
             />
 
             {errors.phone && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.phone}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
             )}
           </div>
 
+          {/* EMAIL */}
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm text-gray-600"
-            >
+            <label htmlFor="email" className="mb-1 block text-sm text-gray-600">
               Email
             </label>
 
@@ -470,29 +441,24 @@ export default function RegisterPage() {
               name="email"
               type="email"
               value={form.email}
-              onChange={(event) =>
-                update("email", event.target.value)
-              }
+              onChange={(event) => update("email", event.target.value)}
               autoComplete="email"
               aria-invalid={Boolean(errors.email)}
-              className={inputClass(
-                Boolean(errors.email)
-              )}
+              className={inputClass(Boolean(errors.email))}
             />
 
             {errors.email && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.email}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>
 
+          {/* AVATAR */}
           <div>
             <label
               htmlFor="avatar"
               className="mb-1 block text-sm text-gray-600"
             >
-              Ảnh đại diện *
+              Profile Picture *
             </label>
 
             <input
@@ -501,27 +467,31 @@ export default function RegisterPage() {
               type="file"
               accept="image/*"
               onChange={(event) => {
-                const selectedFile =
-                  event.target.files?.[0] || null;
+                const selectedFile = event.target.files?.[0] || null;
 
                 setAvatar(selectedFile);
+
                 setErrors((current) => ({
                   ...current,
                   avatar: undefined,
                 }));
+
                 setError(null);
               }}
               aria-invalid={Boolean(errors.avatar)}
               className="w-full text-sm text-gray-700"
             />
 
+            <p className="mt-1 text-xs text-gray-400">
+              JPG, PNG or WEBP. Maximum size: 5 MB.
+            </p>
+
             {errors.avatar && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.avatar}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.avatar}</p>
             )}
           </div>
 
+          {/* GENERAL ERROR */}
           {error && (
             <div
               role="alert"
@@ -531,24 +501,23 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* SUBMIT */}
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-md bg-red-500 py-2.5 font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading
-              ? "Đang đăng ký..."
-              : "Đăng ký"}
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          Đã có tài khoản?{" "}
+          Already have an account?{" "}
           <Link
             href="/login"
             className="font-medium text-red-500 hover:underline"
           >
-            Đăng nhập
+            Sign In
           </Link>
         </p>
       </div>

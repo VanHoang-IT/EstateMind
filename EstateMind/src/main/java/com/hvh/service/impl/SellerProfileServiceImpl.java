@@ -15,12 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- *
  * @author acer
  */
 @Service
-public class SellerProfileServiceImpl
-        implements SellerProfileService {
+public class SellerProfileServiceImpl implements SellerProfileService {
 
     @Autowired
     private SellerProfileRepository sellerProfileRepo;
@@ -30,15 +28,10 @@ public class SellerProfileServiceImpl
     public SellerProfile createProfileForUser(Users user) {
 
         if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException(
-                    "Người dùng chưa được lưu"
-            );
+            throw new IllegalArgumentException("Người dùng chưa được lưu");
         }
 
-        SellerProfile existing =
-                this.sellerProfileRepo.getByUserId(
-                        user.getId()
-                );
+        SellerProfile existing = this.sellerProfileRepo.getByUserId(user.getId());
 
         if (existing != null) {
             return existing;
@@ -46,8 +39,7 @@ public class SellerProfileServiceImpl
 
         Date now = new Date();
 
-        SellerProfile profile =
-                new SellerProfile();
+        SellerProfile profile = new SellerProfile();
 
         profile.setId(user.getId());
         profile.setUsers(user);
@@ -60,19 +52,15 @@ public class SellerProfileServiceImpl
         profile.setCreatedAt(now);
         profile.setUpdatedAt(now);
 
-        return this.sellerProfileRepo.createProfile(
-                profile
-        );
+        return this.sellerProfileRepo.createProfile(profile);
     }
 
     @Override
     @Transactional(readOnly = true)
     public SellerProfile getByUserId(int userId) {
-        return this.sellerProfileRepo.getByUserId(
-                userId
-        );
+        return this.sellerProfileRepo.getByUserId(userId);
     }
-    
+
     @Override
     @Transactional
     public SellerProfile updateProfile(SellerProfile profile) {

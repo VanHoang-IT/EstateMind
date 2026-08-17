@@ -6,8 +6,6 @@ package com.hvh.configs;
 
 import java.util.Properties;
 import javax.sql.DataSource;
-import static org.hibernate.cfg.JdbcSettings.DIALECT;
-import static org.hibernate.cfg.JdbcSettings.SHOW_SQL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +15,10 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.web.client.RestTemplate;
+import static org.hibernate.cfg.JdbcSettings.DIALECT;
+import static org.hibernate.cfg.JdbcSettings.SHOW_SQL;
 
 /**
- *
  * @author acer
  */
 @Configuration
@@ -32,12 +31,12 @@ public class HibernateConfigs {
     @Bean
     public LocalSessionFactoryBean getSessionFactory() {
         LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
-        sessionFactory.setPackagesToScan(new String[]{"com.hvh.pojo"});
+        sessionFactory.setPackagesToScan(new String[] {"com.hvh.pojo"});
         sessionFactory.setDataSource(dataSource());
         sessionFactory.setHibernateProperties(hibernateProperties());
         return sessionFactory;
     }
-    
+
     public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName(env.getProperty("hibernate.connection.driverClass"));
@@ -60,7 +59,7 @@ public class HibernateConfigs {
         transactionManager.setSessionFactory(getSessionFactory().getObject());
         return transactionManager;
     }
-    
+
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();

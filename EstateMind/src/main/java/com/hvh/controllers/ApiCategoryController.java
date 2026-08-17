@@ -4,7 +4,6 @@
  */
 package com.hvh.controllers;
 
-
 import com.hvh.pojo.Category;
 import com.hvh.service.CategoryService;
 import java.util.List;
@@ -15,8 +14,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 /**
- *
  * @author acer
  */
 @RestController
@@ -24,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiCategoryController {
     @Autowired
     private CategoryService cateService;
-    
+
     @GetMapping("/categories")
     @CrossOrigin
     public ResponseEntity<List<Category>> list() {

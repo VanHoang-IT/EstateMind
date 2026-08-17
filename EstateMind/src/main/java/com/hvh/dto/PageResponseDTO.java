@@ -7,19 +7,21 @@ package com.hvh.dto;
 import java.util.List;
 
 /**
- *
  * @author acer
  */
 public class PageResponseDTO<T> {
 
     private List<T> items;
+
     private int page;
+
     private int size;
+
     private long totalElements;
+
     private int totalPages;
 
-    public PageResponseDTO() {
-    }
+    public PageResponseDTO() {}
 
     public PageResponseDTO(List<T> items, int page, int size, long totalElements) {
         this.items = items;
@@ -69,4 +71,3 @@ public class PageResponseDTO<T> {
         this.totalPages = totalPages;
     }
 }
-

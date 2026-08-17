@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -31,44 +30,66 @@ import java.util.Date;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "LegalDocument.findAll", query = "SELECT l FROM LegalDocument l"),
-    @NamedQuery(name = "LegalDocument.findById", query = "SELECT l FROM LegalDocument l WHERE l.id = :id"),
-    @NamedQuery(name = "LegalDocument.findByDocumentType", query = "SELECT l FROM LegalDocument l WHERE l.documentType = :documentType"),
-    @NamedQuery(name = "LegalDocument.findByDocumentNumber", query = "SELECT l FROM LegalDocument l WHERE l.documentNumber = :documentNumber"),
-    @NamedQuery(name = "LegalDocument.findByIssueDate", query = "SELECT l FROM LegalDocument l WHERE l.issueDate = :issueDate"),
-    @NamedQuery(name = "LegalDocument.findByExpiryDate", query = "SELECT l FROM LegalDocument l WHERE l.expiryDate = :expiryDate"),
-    @NamedQuery(name = "LegalDocument.findByFileUrl", query = "SELECT l FROM LegalDocument l WHERE l.fileUrl = :fileUrl"),
-    @NamedQuery(name = "LegalDocument.findByVerified", query = "SELECT l FROM LegalDocument l WHERE l.verified = :verified")})
+    @NamedQuery(
+            name = "LegalDocument.findById",
+            query = "SELECT l FROM LegalDocument l WHERE l.id = :id"),
+    @NamedQuery(
+            name = "LegalDocument.findByDocumentType",
+            query = "SELECT l FROM LegalDocument l WHERE l.documentType = :documentType"),
+    @NamedQuery(
+            name = "LegalDocument.findByDocumentNumber",
+            query = "SELECT l FROM LegalDocument l WHERE l.documentNumber = :documentNumber"),
+    @NamedQuery(
+            name = "LegalDocument.findByIssueDate",
+            query = "SELECT l FROM LegalDocument l WHERE l.issueDate = :issueDate"),
+    @NamedQuery(
+            name = "LegalDocument.findByExpiryDate",
+            query = "SELECT l FROM LegalDocument l WHERE l.expiryDate = :expiryDate"),
+    @NamedQuery(
+            name = "LegalDocument.findByFileUrl",
+            query = "SELECT l FROM LegalDocument l WHERE l.fileUrl = :fileUrl"),
+    @NamedQuery(
+            name = "LegalDocument.findByVerified",
+            query = "SELECT l FROM LegalDocument l WHERE l.verified = :verified")
+})
 public class LegalDocument implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Size(max = 100)
     @Column(name = "document_type")
     private String documentType;
+
     @Size(max = 100)
     @Column(name = "document_number")
     private String documentNumber;
+
     @Column(name = "issue_date")
     @Temporal(TemporalType.DATE)
     private Date issueDate;
+
     @Column(name = "expiry_date")
     @Temporal(TemporalType.DATE)
     private Date expiryDate;
+
     @Size(max = 2147483647)
     @Column(name = "file_url")
     private String fileUrl;
+
     @Column(name = "verified")
     private Boolean verified;
+
     @JoinColumn(name = "property_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Property propertyId;
 
-    public LegalDocument() {
-    }
+    public LegalDocument() {}
 
     public LegalDocument(Integer id) {
         this.id = id;
@@ -152,7 +173,8 @@ public class LegalDocument implements Serializable {
             return false;
         }
         LegalDocument other = (LegalDocument) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -162,5 +184,4 @@ public class LegalDocument implements Serializable {
     public String toString() {
         return "com.hvh.pojo.LegalDocument[ id=" + id + " ]";
     }
-    
 }

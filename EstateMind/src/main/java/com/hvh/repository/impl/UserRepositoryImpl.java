@@ -18,7 +18,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- *
  * @author acer
  */
 @Repository
@@ -38,34 +37,26 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     @Transactional(readOnly = true)
     public Users getUserByUsername(String username) {
-        Session session =
-                this.factory.getObject().getCurrentSession();
+        Session session = this.factory.getObject().getCurrentSession();
 
-        Query<Users> query = session.createNamedQuery(
-                "Users.findByUsername",
-                Users.class
-        );
+        Query<Users> query = session.createNamedQuery("Users.findByUsername", Users.class);
 
         query.setParameter("username", username);
 
-        return query.getResultStream()
-                .findFirst()
-                .orElse(null);
+        return query.getResultStream().findFirst().orElse(null);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Users getUserById(int id) {
-        Session session =
-                this.factory.getObject().getCurrentSession();
+        Session session = this.factory.getObject().getCurrentSession();
 
         return session.get(Users.class, id);
     }
 
     @Override
     public Users addUser(Users user) {
-        Session session =
-                this.factory.getObject().getCurrentSession();
+        Session session = this.factory.getObject().getCurrentSession();
 
         session.persist(user);
         session.flush();
@@ -75,41 +66,26 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean authenticate(
-            String username,
-            String password) {
+    public boolean authenticate(String username, String password) {
 
         Users user = this.getUserByUsername(username);
 
         return user != null
                 && Boolean.TRUE.equals(user.getActive())
-                && this.passwordEncoder.matches(
-                        password,
-                        user.getPassword()
-                );
+                && this.passwordEncoder.matches(password, user.getPassword());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Users> getUsers(Integer page) {
-        Session session =
-                this.factory.getObject().getCurrentSession();
+        Session session = this.factory.getObject().getCurrentSession();
 
-        Query<Users> query = session.createQuery(
-                "FROM Users ORDER BY id DESC",
-                Users.class
-        );
+        Query<Users> query = session.createQuery("FROM Users ORDER BY id DESC", Users.class);
 
         if (page != null) {
-            int pageSize = env.getProperty(
-                    "properties.page_size",
-                    Integer.class,
-                    10
-            );
+            int pageSize = env.getProperty("properties.page_size", Integer.class, 10);
 
-            query.setFirstResult(
-                    (Math.max(page, 1) - 1) * pageSize
-            );
+            query.setFirstResult((Math.max(page, 1) - 1) * pageSize);
 
             query.setMaxResults(pageSize);
         }
@@ -119,15 +95,12 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Users updateRole(int id, String role) {
-        Session session =
-                this.factory.getObject().getCurrentSession();
+        Session session = this.factory.getObject().getCurrentSession();
 
         Users user = session.get(Users.class, id);
 
         if (user == null) {
-            throw new IllegalArgumentException(
-                    "Không tìm thấy người dùng với id " + id
-            );
+            throw new IllegalArgumentException("Không tìm thấy người dùng với id " + id);
         }
 
         user.setUserRole(role);
@@ -135,7 +108,7 @@ public class UserRepositoryImpl implements UserRepository {
 
         return user;
     }
-    
+
     @Override
     public Users updateUser(Users u) {
         Session session = this.factory.getObject().getCurrentSession();

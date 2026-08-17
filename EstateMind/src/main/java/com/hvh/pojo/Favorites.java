@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -31,27 +30,33 @@ import java.util.Date;
 @NamedQueries({
     @NamedQuery(name = "Favorites.findAll", query = "SELECT f FROM Favorites f"),
     @NamedQuery(name = "Favorites.findById", query = "SELECT f FROM Favorites f WHERE f.id = :id"),
-    @NamedQuery(name = "Favorites.findByCreatedDate", query = "SELECT f FROM Favorites f WHERE f.createdDate = :createdDate")})
+    @NamedQuery(
+            name = "Favorites.findByCreatedDate",
+            query = "SELECT f FROM Favorites f WHERE f.createdDate = :createdDate")
+})
 public class Favorites implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Column(name = "created_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
+
     @JoinColumn(name = "property_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Property propertyId;
+
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Users userId;
 
-    public Favorites() {
-    }
+    public Favorites() {}
 
     public Favorites(Integer id) {
         this.id = id;
@@ -103,7 +108,8 @@ public class Favorites implements Serializable {
             return false;
         }
         Favorites other = (Favorites) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -113,5 +119,4 @@ public class Favorites implements Serializable {
     public String toString() {
         return "com.hvh.pojo.Favorites[ id=" + id + " ]";
     }
-    
 }

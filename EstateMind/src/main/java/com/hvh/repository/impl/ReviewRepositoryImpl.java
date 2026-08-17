@@ -20,10 +20,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- *
  * @author acer
  */
-
 @Repository
 @Transactional
 public class ReviewRepositoryImpl implements ReviewRepository {
@@ -50,18 +48,13 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 
             if (propertyId != null && !propertyId.isEmpty()) {
                 predicates.add(
-                        cb.equal(root.get("propertyId").get("id"),
-                                Integer.parseInt(propertyId))
-                );
+                        cb.equal(root.get("propertyId").get("id"), Integer.parseInt(propertyId)));
             }
 
             String visible = params.get("visible");
 
             if (visible != null) {
-                predicates.add(
-                        cb.equal(root.get("visible"),
-                                Boolean.parseBoolean(visible))
-                );
+                predicates.add(cb.equal(root.get("visible"), Boolean.parseBoolean(visible)));
             }
         }
 
@@ -75,10 +68,8 @@ public class ReviewRepositoryImpl implements ReviewRepository {
     public void addReviewOrUpdate(Review review) {
         Session session = sessionFactory.getCurrentSession();
 
-        if (review.getId() == null)
-            session.persist(review);
-        else
-            session.merge(review);
+        if (review.getId() == null) session.persist(review);
+        else session.merge(review);
     }
 
     @Override
@@ -93,8 +84,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 
         Review review = session.get(Review.class, id);
 
-        if (review != null)
-            session.remove(review);
+        if (review != null) session.remove(review);
     }
 
     @Override
@@ -103,8 +93,8 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         Session session = sessionFactory.getCurrentSession();
 
         return session.createQuery(
-                "FROM Review r WHERE r.propertyId.id = :id ORDER BY r.createdAt DESC",
-                Review.class)
+                        "FROM Review r WHERE r.propertyId.id = :id ORDER BY r.createdAt DESC",
+                        Review.class)
                 .setParameter("id", propertyId)
                 .getResultList();
     }

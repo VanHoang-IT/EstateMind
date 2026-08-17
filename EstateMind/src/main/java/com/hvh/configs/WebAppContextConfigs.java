@@ -4,8 +4,6 @@
  */
 package com.hvh.configs;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.hvh.formatter.CategoryFormatter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -19,7 +17,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- *
  * @author 03358
  */
 @Configuration
@@ -28,11 +25,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
             "com.hvh.controllers",
             "com.hvh.repository",
             "com.hvh.service",
-}
-)
+        })
 @EnableWebMvc
 @EnableTransactionManagement
-@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(
+        prePostEnabled = true)
 public class WebAppContextConfigs implements WebMvcConfigurer {
 
     @Override

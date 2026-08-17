@@ -11,3 +11,76 @@ pipeline/chroma_db/
 
 pipeline/data/*.csv
 
+estate-mind-app/.venv/
+
+
+# ==== BÍ MẬT — quan trọng nhất ====
+.env
+.env.local
+*.env
+
+# ==== Python ====
+pipeline/.venv/
+__pycache__/
+*.pyc
+
+# ==== Dữ liệu crawl & sinh ra ====
+pipeline/data/*.csv
+pipeline/data/blocked_pages/
+pipeline/chroma_db/
+pipeline/chrome_profile/
+pipeline/training/valuation/models/*.joblib
+
+# ==== Frontend ====
+node_modules/
+.next/
+out/
+
+# ==== Java / Maven ====
+target/
+*.war
+
+# ==== IDE & OS ====
+.idea/
+.vscode/
+nbproject/private/
+Thumbs.db
+.DS_Store
+
+# Trọng số mô hình — quá lớn cho Git
+pipeline/models/
+pipeline/training/ner/models/
+pipeline/training/reader/models/
+pipeline/training/retriever/models/
+pipeline/training/valuation/models/
+*.safetensors
+*.bin
+*.pt
+*.joblib
+
+# Bí mật
+.env
+.env.local
+
+# Python
+pipeline/.venv/
+__pycache__/
+*.pyc
+
+# Dữ liệu sinh ra
+pipeline/chroma_db/
+pipeline/chrome_profile/
+pipeline/data/blocked_pages/
+
+# Frontend
+node_modules/
+.next/
+
+# Java
+target/
+*.war
+
+# IDE
+.idea/
+.vscode/
+nbproject/private/

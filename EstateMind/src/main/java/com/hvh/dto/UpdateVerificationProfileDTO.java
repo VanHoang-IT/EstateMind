@@ -5,15 +5,16 @@
 package com.hvh.dto;
 
 /**
- *
  * @author acer
  */
-
 public class UpdateVerificationProfileDTO {
 
     private String address;
+
     private String identityNumber;
+
     private String bio;
+
     private Integer companyId;
 
     public String getAddress() {

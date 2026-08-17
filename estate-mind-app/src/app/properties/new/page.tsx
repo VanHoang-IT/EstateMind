@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,6 +48,12 @@ const MAX_PROPERTY_IMAGES = 8;
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+// category_id 1-12 = nhà đất bán, 13-23 = nhà đất cho thuê
+const MAX_SALE_CATEGORY_ID = 12;
+
+// Loại hình không có phòng ngủ -> ẩn ô phòng ngủ.
+const NO_BEDROOM_CATEGORY_IDS = new Set([7, 8, 9, 11, 12, 20, 21, 22, 23]);
+
 export default function NewPropertyPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -58,6 +64,24 @@ export default function NewPropertyPage() {
   const [propertyImages, setPropertyImages] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const isRent = form.categoryId > MAX_SALE_CATEGORY_ID;
+
+  const priceUnitLabel = isRent ? "triệu đồng/tháng" : "tỷ đồng";
+
+  const priceFactor = isRent ? 1_000_000 : 1_000_000_000;
+
+  const priceStep = isRent ? "0.5" : "0.01";
+
+  const showBedrooms =
+    !form.categoryId || !NO_BEDROOM_CATEGORY_IDS.has(form.categoryId);
+
+  const groupedCategories = useMemo(() => {
+    return {
+      sale: categories.filter((c) => c.id <= MAX_SALE_CATEGORY_ID),
+      rent: categories.filter((c) => c.id > MAX_SALE_CATEGORY_ID),
+    };
+  }, [categories]);
 
   useEffect(() => {
     let active = true;
@@ -81,8 +105,21 @@ export default function NewPropertyPage() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
       router.replace("/login");
+      return;
+    }
+
+    if (user.userRole !== "ROLE_SELLER") {
+      if (user.userRole === "ROLE_ADMIN") {
+        router.replace("/admin");
+      } else {
+        router.replace("/");
+      }
     }
   }, [authLoading, user, router]);
 
@@ -93,6 +130,24 @@ export default function NewPropertyPage() {
     setForm((current) => ({
       ...current,
       [key]: value,
+    }));
+  }
+
+  function handleCategoryChange(value: string) {
+    const nextId = value ? Number(value) : 0;
+
+    const wasRent = form.categoryId > MAX_SALE_CATEGORY_ID;
+    const willBeRent = nextId > MAX_SALE_CATEGORY_ID;
+
+    setForm((current) => ({
+      ...current,
+      categoryId: nextId,
+      // Đổi giữa bán và thuê thì xoá giá cũ: "15" ở hai đơn vị là hai số khác nhau.
+      price: wasRent === willBeRent ? current.price : 0,
+      // Loại hình không có phòng ngủ thì bỏ giá trị đã nhập.
+      bedrooms: NO_BEDROOM_CATEGORY_IDS.has(nextId)
+        ? undefined
+        : current.bedrooms,
     }));
   }
 
@@ -213,7 +268,7 @@ export default function NewPropertyPage() {
     }
 
     if (!form.price || form.price <= 0) {
-      setError("Giá bất động sản phải lớn hơn 0.");
+      setError(`Giá bất động sản phải lớn hơn 0 (${priceUnitLabel}).`);
       return;
     }
 
@@ -230,20 +285,24 @@ export default function NewPropertyPage() {
     setSubmitting(true);
 
     try {
-      const created = await propertyService.createProperty(
+      await propertyService.createProperty(
         {
           ...form,
           title: form.title.trim(),
           description: form.description?.trim() || undefined,
           address: form.address.trim(),
           district: form.district?.trim() || undefined,
-          price: Math.round(form.price * 1_000_000_000),
+          price: Math.round(form.price * priceFactor),
         },
         mainImage,
         propertyImages,
       );
 
-      router.push(`/properties/${created.id}`);
+      /*
+       * Tin mới ở trạng thái PENDING nên chưa được hiển thị công khai.
+       * Chuyển người bán về trang Tin đăng của tôi để theo dõi trạng thái kiểm duyệt.
+       */
+      router.push("/properties/mine");
       router.refresh();
     } catch (submitError) {
       setError(
@@ -256,7 +315,7 @@ export default function NewPropertyPage() {
     }
   }
 
-  if (authLoading || !user) {
+  if (authLoading || !user || user.userRole !== "ROLE_SELLER") {
     return (
       <div className="flex min-h-[50vh] items-center justify-center text-gray-400">
         Đang tải...
@@ -290,7 +349,7 @@ export default function NewPropertyPage() {
             required
             maxLength={255}
             disabled={submitting}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
           />
         </div>
 
@@ -305,23 +364,32 @@ export default function NewPropertyPage() {
           <select
             id="property-category"
             value={form.categoryId || ""}
-            onChange={(event) =>
-              update(
-                "categoryId",
-                event.target.value ? Number(event.target.value) : 0,
-              )
-            }
+            onChange={(event) => handleCategoryChange(event.target.value)}
             required
             disabled={submitting}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
           >
             <option value="">-- Chọn loại hình --</option>
 
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            {groupedCategories.sale.length > 0 && (
+              <optgroup label="Nhà đất bán">
+                {groupedCategories.sale.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+
+            {groupedCategories.rent.length > 0 && (
+              <optgroup label="Nhà đất cho thuê">
+                {groupedCategories.rent.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </div>
 
@@ -331,13 +399,13 @@ export default function NewPropertyPage() {
               htmlFor="property-price"
               className="mb-1 block text-sm text-gray-600"
             >
-              Giá (VNĐ) *
+              Giá ({priceUnitLabel}) *
             </label>
 
             <input
               id="property-price"
               type="number"
-              step="0.01"
+              step={priceStep}
               min="0.01"
               value={form.price || ""}
               onChange={(event) =>
@@ -348,8 +416,14 @@ export default function NewPropertyPage() {
               }
               required
               disabled={submitting}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
             />
+
+            <p className="mt-1 text-xs text-gray-400">
+              {isRent
+                ? "Ví dụ: 15 nghĩa là 15 triệu đồng mỗi tháng."
+                : "Ví dụ: 5.4 nghĩa là 5,4 tỷ đồng."}
+            </p>
           </div>
 
           <div>
@@ -373,7 +447,7 @@ export default function NewPropertyPage() {
                 )
               }
               disabled={submitting}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
             />
           </div>
         </div>
@@ -393,7 +467,7 @@ export default function NewPropertyPage() {
             onChange={(event) => update("address", event.target.value)}
             required
             disabled={submitting}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
           />
         </div>
 
@@ -412,34 +486,36 @@ export default function NewPropertyPage() {
               value={form.district || ""}
               onChange={(event) => update("district", event.target.value)}
               disabled={submitting}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="property-bedrooms"
-              className="mb-1 block text-sm text-gray-600"
-            >
-              Số phòng ngủ
-            </label>
+          {showBedrooms && (
+            <div>
+              <label
+                htmlFor="property-bedrooms"
+                className="mb-1 block text-sm text-gray-600"
+              >
+                Số phòng ngủ
+              </label>
 
-            <input
-              id="property-bedrooms"
-              type="number"
-              min="0"
-              step="1"
-              value={form.bedrooms ?? ""}
-              onChange={(event) =>
-                update(
-                  "bedrooms",
-                  event.target.value ? Number(event.target.value) : undefined,
-                )
-              }
-              disabled={submitting}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
-            />
-          </div>
+              <input
+                id="property-bedrooms"
+                type="number"
+                min="0"
+                step="1"
+                value={form.bedrooms ?? ""}
+                onChange={(event) =>
+                  update(
+                    "bedrooms",
+                    event.target.value ? Number(event.target.value) : undefined,
+                  )
+                }
+                disabled={submitting}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -456,7 +532,7 @@ export default function NewPropertyPage() {
             value={form.description || ""}
             onChange={(event) => update("description", event.target.value)}
             disabled={submitting}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none disabled:bg-gray-100"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none disabled:bg-gray-100"
           />
         </div>
 
@@ -467,7 +543,7 @@ export default function NewPropertyPage() {
                 Vị trí trên bản đồ *
               </h2>
               <p className="text-xs text-gray-400">
-                Nhấn lên bản đồ để tự điền latitude và longitude.
+                Nhấn lên bản đồ để tự động điền vĩ độ và kinh độ.
               </p>
             </div>
 
@@ -493,7 +569,7 @@ export default function NewPropertyPage() {
                 htmlFor="property-latitude"
                 className="mb-1 block text-sm text-gray-600"
               >
-                Latitude
+                Vĩ độ
               </label>
 
               <input
@@ -510,7 +586,7 @@ export default function NewPropertyPage() {
                 htmlFor="property-longitude"
                 className="mb-1 block text-sm text-gray-600"
               >
-                Longitude
+                Kinh độ
               </label>
 
               <input
@@ -587,7 +663,7 @@ export default function NewPropertyPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-red-500 py-2.5 font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-md bg-brand py-2.5 font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Đang tạo tin và tải ảnh..." : "Đăng tin"}
         </button>

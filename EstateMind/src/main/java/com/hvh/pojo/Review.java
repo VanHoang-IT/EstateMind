@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -33,39 +32,54 @@ import java.util.Date;
 @NamedQueries({
     @NamedQuery(name = "Review.findAll", query = "SELECT r FROM Review r"),
     @NamedQuery(name = "Review.findById", query = "SELECT r FROM Review r WHERE r.id = :id"),
-    @NamedQuery(name = "Review.findByContent", query = "SELECT r FROM Review r WHERE r.content = :content"),
-    @NamedQuery(name = "Review.findByRating", query = "SELECT r FROM Review r WHERE r.rating = :rating"),
-    @NamedQuery(name = "Review.findByCreatedAt", query = "SELECT r FROM Review r WHERE r.createdAt = :createdAt"),
-    @NamedQuery(name = "Review.findByVisible", query = "SELECT r FROM Review r WHERE r.visible = :visible")})
+    @NamedQuery(
+            name = "Review.findByContent",
+            query = "SELECT r FROM Review r WHERE r.content = :content"),
+    @NamedQuery(
+            name = "Review.findByRating",
+            query = "SELECT r FROM Review r WHERE r.rating = :rating"),
+    @NamedQuery(
+            name = "Review.findByCreatedAt",
+            query = "SELECT r FROM Review r WHERE r.createdAt = :createdAt"),
+    @NamedQuery(
+            name = "Review.findByVisible",
+            query = "SELECT r FROM Review r WHERE r.visible = :visible")
+})
 public class Review implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+
     @Basic(optional = false)
     @NotNull
     @Size(min = 1, max = 2147483647)
     @Column(name = "content")
     private String content;
+
     @Column(name = "rating")
     private Integer rating;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
     @Column(name = "visible")
     private Boolean visible;
+
     @JoinColumn(name = "property_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Property propertyId;
+
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Users userId;
 
-    public Review() {
-    }
+    public Review() {}
 
     public Review(Integer id) {
         this.id = id;
@@ -146,7 +160,8 @@ public class Review implements Serializable {
             return false;
         }
         Review other = (Review) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -156,5 +171,4 @@ public class Review implements Serializable {
     public String toString() {
         return "com.hvh.pojo.Review[ id=" + id + " ]";
     }
-    
 }

@@ -1,3 +1,4 @@
+import json
 import time
 import random
 import re
@@ -9,6 +10,43 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+
+# =========================
+# DANH MỤC CRAWL
+# (category_path, category_id, property_type_id, listing_type)
+# property_type_id: 1 = BÁN, 2 = THUÊ
+# =========================
+CATEGORIES = [
+    # ---- BÁN (property_type_id = 1) ----
+    ("ban-can-ho-chung-cu-tp-hcm",               1,  1, "BAN"),
+    ("ban-can-ho-chung-cu-mini-tp-hcm",          2,  1, "BAN"),
+    ("ban-nha-rieng-tp-hcm",                     3,  1, "BAN"),
+    ("ban-nha-biet-thu-lien-ke-tp-hcm",          4,  1, "BAN"),
+    ("ban-nha-mat-pho-tp-hcm",                   5,  1, "BAN"),
+    ("ban-shophouse-nha-pho-thuong-mai-tp-hcm",  6,  1, "BAN"),
+    ("ban-dat-nen-du-an-tp-hcm",                 7,  1, "BAN"),
+    ("ban-dat-tp-hcm",                           8,  1, "BAN"),
+    ("ban-trang-trai-khu-nghi-duong-tp-hcm",     9,  1, "BAN"),
+    ("ban-condotel-tp-hcm",                     10,  1, "BAN"),
+    ("ban-kho-nha-xuong-tp-hcm",                11,  1, "BAN"),
+    ("ban-loai-bat-dong-san-khac-tp-hcm",       12,  1, "BAN"),
+
+    # ---- THUÊ (property_type_id = 2) ----
+    ("cho-thue-can-ho-chung-cu-tp-hcm",               13, 2, "THUE"),
+    ("cho-thue-can-ho-chung-cu-mini-tp-hcm",          14, 2, "THUE"),
+    ("cho-thue-nha-rieng-tp-hcm",                     15, 2, "THUE"),
+    ("cho-thue-nha-biet-thu-lien-ke-tp-hcm",          16, 2, "THUE"),
+    ("cho-thue-nha-mat-pho-tp-hcm",                   17, 2, "THUE"),
+    ("cho-thue-shophouse-nha-pho-thuong-mai-tp-hcm",  18, 2, "THUE"),
+    ("cho-thue-nha-tro-phong-tro-tp-hcm",             19, 2, "THUE"),
+    ("cho-thue-van-phong-tp-hcm",                     20, 2, "THUE"),
+    ("cho-thue-sang-nhuong-cua-hang-ki-ot-tp-hcm",    21, 2, "THUE"),
+    ("cho-thue-kho-nha-xuong-dat-tp-hcm",             22, 2, "THUE"),
+    ("cho-thue-loai-bat-dong-san-khac-tp-hcm",        23, 2, "THUE"),
+]
+
+PAGES_PER_CATEGORY = 15    
 
 
 # =========================
@@ -27,21 +65,18 @@ def init_driver():
 def safe_text(driver, css):
     try:
         return driver.find_element(By.CSS_SELECTOR, css).text.strip()
-    except:
+    except Exception:
         return ""
 
 
 # =========================
 # LAT/LNG EXTRACT
 # =========================
-# Bounding box gần đúng của TP.HCM (sau sáp nhập, bao gồm cả Bình Dương,
-# Bà Rịa - Vũng Tàu cũ) — nới rộng một chút để không loại nhầm toạ độ hợp lệ.
 HCM_LAT_RANGE = (10.30, 11.20)
 HCM_LNG_RANGE = (106.20, 107.60)
 
 
-def is_valid_hcm_coordinate(lat: float, lng: float) -> bool:
-    """Kiểm tra toạ độ có hợp lý nằm trong khu vực TP.HCM không."""
+def is_valid_hcm_coordinate(lat, lng):
     return (
         HCM_LAT_RANGE[0] <= lat <= HCM_LAT_RANGE[1]
         and HCM_LNG_RANGE[0] <= lng <= HCM_LNG_RANGE[1]
@@ -49,59 +84,57 @@ def is_valid_hcm_coordinate(lat: float, lng: float) -> bool:
 
 
 def extract_lat_lng(driver):
-    """
-    Tìm toạ độ của tin đăng trong script chứa 'getListingRecommendationParams'.
-
-    Quét TẤT CẢ các cặp lat/lng tìm được, chỉ chấp nhận cặp đầu tiên nằm
-    trong phạm vi hợp lý của TP.HCM. Nếu không có cặp nào hợp lệ ->
-    trả về None, None (thà thiếu dữ liệu còn hơn lưu sai vị trí).
-    """
     try:
-        scripts = driver.find_elements(
-            By.XPATH,
-            "//script[contains(text(), 'getListingRecommendationParams')]"
-        )
-        for s in scripts:
-            content = s.get_attribute("innerHTML") or s.get_attribute("textContent")
-            if not content:
-                continue
-
-            lat_matches = re.findall(r'latitude:\s*([-\d.]+)', content)
-            lng_matches = re.findall(r'longitude:\s*([-\d.]+)', content)
-
-            for lat_str, lng_str in zip(lat_matches, lng_matches):
-                try:
-                    lat = float(lat_str)
-                    lng = float(lng_str)
-                except ValueError:
-                    continue
-
-                if is_valid_hcm_coordinate(lat, lng):
-                    return lat, lng
-
-        print("⚠️ Không tìm được toạ độ hợp lệ (TP.HCM) trong script — bỏ trống lat/lng.")
+        scripts = driver.find_elements(By.TAG_NAME, "script")
+        blob = " ".join(s.get_attribute("innerHTML") or "" for s in scripts)
+    except Exception:
         return None, None
 
-    except Exception as e:
-        print("⚠️ lat/lng error:", e)
-        return None, None
+    number = r"(-?\d{1,3}(?:\.\d+)?)"
+    patterns = (
+        rf"[\"']?latitude[\"']?\s*[:=]\s*[\"']?{number}[\"']?.{{0,500}}?"
+        rf"[\"']?longitude[\"']?\s*[:=]\s*[\"']?{number}",
+        rf"[\"']?longitude[\"']?\s*[:=]\s*[\"']?{number}[\"']?.{{0,500}}?"
+        rf"[\"']?latitude[\"']?\s*[:=]\s*[\"']?{number}",
+    )
+    for index, pattern in enumerate(patterns):
+        for match in re.finditer(pattern, blob, re.IGNORECASE | re.DOTALL):
+            first, second = float(match.group(1)), float(match.group(2))
+            lat, lng = (first, second) if index == 0 else (second, first)
+            if is_valid_hcm_coordinate(lat, lng):
+                return lat, lng
+    return None, None
+
+
+def wait_for_coords(driver, max_wait=6.0, step=0.8):
+    """Thăm dò toạ độ: có thì trả ngay, chưa có thì ngủ ngắn rồi thử lại."""
+    waited = 0.0
+    lat, lng = extract_lat_lng(driver)
+
+    while lat is None and waited < max_wait:
+        time.sleep(step)
+        waited += step
+        lat, lng = extract_lat_lng(driver)
+
+    return lat, lng
 
 
 # =========================
-# IMAGE SRC CLEAN
+# IMAGE HELPERS
 # =========================
-def clean_image_src(src: str) -> str:
-    """Bỏ đoạn resize để lấy ảnh gốc kích thước lớn."""
-    return re.sub(r"/resize/\d+x\d+/", "/", src)
+RESIZE_RE = re.compile(r"/(?:resize|crop)/\d+x\d+/", re.IGNORECASE)
 
 
-# =========================
-# IMAGES EXTRACT
-# =========================
+def clean_image_src(src):
+    if not src:
+        return ""
+    src = src.strip()
+    if src.startswith(("data:", "blob:")):
+        return ""
+    return RESIZE_RE.sub("/", src)
+
+
 def extract_images(driver):
-    """
-    Tìm tất cả các thẻ img trong slide ảnh, lấy data-src hoặc src.
-    """
     images = []
     try:
         elements = driver.find_elements(By.CSS_SELECTOR, ".re__media-thumb-item img")
@@ -109,41 +142,136 @@ def extract_images(driver):
             src = el.get_attribute("data-src") or el.get_attribute("src")
             if src:
                 images.append(clean_image_src(src))
-
-        return list(dict.fromkeys(images))
+        return list(dict.fromkeys(i for i in images if i))
     except Exception as e:
         print("⚠️ image extract error:", e)
         return []
 
 
 # =========================
-# DETAIL CRAWL
+# ĐẶC ĐIỂM BẤT ĐỘNG SẢN
+# Quét toàn bộ khối "Đặc điểm bất động sản" theo cặp nhãn - giá trị.
+# Không cố định tên trường: batdongsan thêm trường mới thì tự có.
 # =========================
-def crawl_detail(driver, url, main_image=""):
-    driver.get(url)
+SPECS_CONTAINER = (
+    "#product-detail-web > div.re__section.re__pr-specs"
+    ".re__pr-specs-v1.js__section.js__li-specs"
+)
+
+
+def extract_specs(driver):
     try:
-        WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        pairs = driver.execute_script(
+            """
+            const box = document.querySelector(arguments[0]);
+            if (!box) return [];
+
+            const out = [];
+            const items = box.querySelectorAll("[class*='specs-content-item']");
+
+            items.forEach(item => {
+                const titleEl = item.querySelector("[class*='item-title'], [class*='title']");
+                const valueEl = item.querySelector("[class*='item-value'], [class*='value']");
+                if (!titleEl || !valueEl) return;
+
+                const title = (titleEl.innerText || '').trim();
+                const value = (valueEl.innerText || '').trim();
+                if (title && value) out.push([title, value]);
+            });
+
+            return out;
+            """,
+            SPECS_CONTAINER,
         )
-    except:
-        return None, []
+    except Exception as e:
+        print("⚠️ specs extract error:", e)
+        return {}
 
-    time.sleep(random.uniform(2, 3))
+    specs = {}
 
-    # ===== TITLE =====
+    for entry in pairs or []:
+        if not entry or len(entry) < 2:
+            continue
+
+        title = " ".join(str(entry[0]).split())
+        value = " ".join(str(entry[1]).split())
+
+        if title and value and title not in specs:
+            specs[title] = value
+
+    return specs
+
+
+def specs_to_json(specs):
+    if not specs:
+        return ""
+    return json.dumps(specs, ensure_ascii=False)
+
+
+# =========================
+# DETAIL CRAWL
+# Trả về (data, images, is_expired)
+# =========================
+def crawl_detail(driver, url, main_image="", max_attempts=3):
+    # Chờ #product-detail-web (chỉ có ở trang thật) thay vì body/h1 —
+    # trang Cloudflare challenge cũng có body và h1 nên dễ lấy nhầm trang rỗng.
+    loaded = False
+
+    for attempt in range(1, max_attempts + 1):
+        driver.get(url)
+
+        try:
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "#product-detail-web")
+                )
+            )
+            loaded = True
+            break
+        except Exception:
+            # Trang hết hạn KHÔNG có #product-detail-web -> kiểm tra trước khi thử lại.
+            try:
+                body_text = driver.find_element(By.TAG_NAME, "body").text
+                normalized_body = " ".join(body_text.lower().split())
+
+                if "tin đăng này đã hết hạn" in normalized_body:
+                    print(f"⛔ TIN HẾT HẠN: {url}")
+                    return None, [], True
+            except Exception:
+                pass
+
+            if attempt < max_attempts:
+                print(f"   ⏳ Chưa qua Cloudflare (lần {attempt}), chờ rồi thử lại...")
+                time.sleep(random.uniform(8, 14))
+
+    if not loaded:
+        print("   ⚠️ Bỏ qua tin này, không tải được nội dung.")
+        return None, [], False
+
+    time.sleep(random.uniform(1.5, 2.5))
+
+    # Kiểm tra lần nữa: có tin hết hạn vẫn render #product-detail-web.
+    try:
+        body_text = driver.find_element(By.TAG_NAME, "body").text
+        normalized_body = " ".join(body_text.lower().split())
+
+        if "tin đăng này đã hết hạn" in normalized_body:
+            print(f"⛔ TIN HẾT HẠN: {url}")
+            return None, [], True
+    except Exception as e:
+        print("⚠️ Không kiểm tra được trạng thái hết hạn:", e)
+
     title = safe_text(driver, "h1")
     if "Liên hệ ngay" in title:
         title = title.split("Liên hệ ngay")[0].strip()
 
-    # ===== LAT/LNG & IMAGES =====
-    latitude, longitude = extract_lat_lng(driver)
+    latitude, longitude = wait_for_coords(driver)
     images = extract_images(driver)
+    specs = extract_specs(driver)
 
-    # Nếu list page không lấy được ảnh cover -> fallback ảnh đầu trong slide
     if not main_image and images:
         main_image = images[0]
 
-    # ===== BÓC TÁCH ADDRESS & DISTRICT =====
     address_val = safe_text(driver, "#product-detail-web > div.re__ldp-address > span > span.re__address-line-1")
     district_val = safe_text(driver, "#product-detail-web > div.re__ldp-address > span > span.re__address-line-2")
 
@@ -162,17 +290,19 @@ def crawl_detail(driver, url, main_image=""):
                                  "#product-detail-web > div.re__section.re__pr-description.js__section.js__li-description > div"),
         "post_date": safe_text(driver,
                                "#product-detail-web > div.re__pr-short-info.re__pr-config.js__pr-config > div:nth-child(1) > span.value"),
-        "latitude": latitude,
-        "longitude": longitude,
-        "crawl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "latitude": latitude if latitude is not None else "",
+        "longitude": longitude if longitude is not None else "",
+        "specs_json": specs_to_json(specs),
+        "crawl_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
-    print(f"✅ {title} | lat={latitude} lng={longitude} | {len(images)} photos | cover={'có' if main_image else 'KHÔNG'}")
-    return data, images
+    print(f"✅ {title[:55]} | lat={latitude} | {len(images)} ảnh | "
+          f"{len(specs)} đặc điểm | cover={'có' if main_image else 'KHÔNG'}")
+    return data, images, False
 
 
 # =========================
-# LIST PAGE — lấy link tin + ảnh đại diện trên card
+# LIST PAGE
 # =========================
 def crawl_list(driver, page, category_path):
     url = f"https://batdongsan.com.vn/{category_path}/p{page}"
@@ -183,19 +313,25 @@ def crawl_list(driver, page, category_path):
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-    except:
+    except Exception:
         return []
+
+    # Chờ container tin thật — cho Cloudflare thời gian giải challenge.
+    try:
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#product-lists-web"))
+        )
+    except Exception:
+        pass
 
     time.sleep(random.uniform(2, 4))
 
-    # Scroll xuống cuối để ảnh lazy-load được gán src/data-src đầy đủ
     try:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(1.5)
     except Exception:
         pass
 
-    # BƯỚC 1: lấy link (giữ nguyên logic bản gốc đã chạy ổn)
     try:
         urls = driver.execute_script("""
             const links = document.querySelectorAll('#product-lists-web a[href]');
@@ -209,7 +345,6 @@ def crawl_list(driver, page, category_path):
     urls = [u for u in urls if u and "batdongsan.com.vn" in u and detail_pattern.search(u)]
     urls = list(dict.fromkeys(urls))
 
-    # BƯỚC 2: lấy map link -> ảnh cover; lỗi thì bỏ qua, không hỏng luồng chính
     cover_map = {}
     try:
         pairs = driver.execute_script("""
@@ -244,10 +379,8 @@ def save_row(file, data):
 def save_images(file, url, images):
     if not images:
         return
-
     rows = [{"post_url": url, "image_url": img} for img in images]
     df = pd.DataFrame(rows)
-
     file_exists = os.path.isfile(file)
     df.to_csv(file, mode="a", header=not file_exists, index=False, encoding="utf-8-sig")
 
@@ -257,13 +390,11 @@ def save_images(file, url, images):
 # =========================
 def main():
     driver = init_driver()
-
     os.makedirs("data", exist_ok=True)
 
-    output_file = "data/batdongsan_live_1.csv"
-    images_file = "data/batdongsan_images_1.csv"
+    output_file = "data/properties_raw.csv"
+    images_file = "data/property_images_raw.csv"
 
-    # RESUME: không xoá file cũ, bỏ qua các url đã crawl rồi
     crawled_urls = set()
     if os.path.exists(output_file):
         try:
@@ -272,34 +403,86 @@ def main():
         except Exception:
             pass
 
-    print("🚀 START CRAWLER - BỘ SỐ 1")
+    print("🚀 START CRAWLER ĐA DANH MỤC (BÁN + THUÊ)")
 
     try:
-        for page in range(1, 50):
-            entries = crawl_list(driver, page, category_path="ban-can-ho-chung-cu-tp-hcm")
+        for category_path, category_id, property_type_id, listing_type in CATEGORIES:
+            # Cờ dừng toàn bộ category khi gặp tin hết hạn
+            stop_category = False
 
-            for entry in entries:
-                url = entry["url"]
+            print(
+                f"\n========== {listing_type} | "
+                f"property_type_id={property_type_id} | "
+                f"category_id={category_id} | {category_path} =========="
+            )
 
-                if url in crawled_urls:
-                    continue
+            for page in range(1, PAGES_PER_CATEGORY + 1):
+                entries = crawl_list(driver, page, category_path=category_path)
 
-                try:
-                    data, images = crawl_detail(driver, url, entry["main_image"])
+                if not entries:
+                    print("   ⚠️ Trang rỗng, chờ thêm rồi thử lại...")
+                    time.sleep(random.uniform(5, 8))
+                    entries = crawl_list(driver, page, category_path=category_path)
 
-                    if data:
-                        save_row(output_file, data)
-                        save_images(images_file, url, images)
-                        crawled_urls.add(url)
-                        print("💾 SAVED Data & Images")
+                if not entries:
+                    print("   ℹ️ Hết tin, sang danh mục khác.")
+                    break
 
-                    time.sleep(random.uniform(1, 2))
+                for entry in entries:
+                    url = entry["url"]
 
-                except Exception as e:
-                    print("❌ detail error:", e)
+                    if url in crawled_urls:
+                        continue
+
+                    try:
+                        data, images, is_expired = crawl_detail(
+                            driver,
+                            url,
+                            entry["main_image"]
+                        )
+
+                        # Gặp tin hết hạn -> dừng category hiện tại
+                        # và chuyển sang category tiếp theo.
+                        if is_expired:
+                            print(
+                                f"⛔ GẶP TIN HẾT HẠN -> DỪNG CATEGORY "
+                                f"{category_id} ({category_path})"
+                            )
+                            stop_category = True
+                            break
+
+                        if data:
+                            # Gắn nhãn theo đúng danh mục URL đang crawl
+                            data["category_id"] = category_id
+                            data["property_type_id"] = property_type_id
+                            data["listing_type"] = listing_type
+
+                            save_row(output_file, data)
+                            save_images(images_file, url, images)
+                            crawled_urls.add(url)
+                            print(
+                                f"💾 SAVED | category_id={category_id} | "
+                                f"property_type_id={property_type_id} | {listing_type}"
+                            )
+
+                        time.sleep(random.uniform(2, 4))
+
+                    except Exception as e:
+                        print("❌ detail error:", e)
+
+                # Nếu đã gặp tin hết hạn thì thoát luôn vòng page
+                # để chuyển sang category kế tiếp.
+                if stop_category:
+                    print(f"➡️ CHUYỂN SANG CATEGORY TIẾP THEO SAU category_id={category_id}")
+                    break
+
+            time.sleep(random.uniform(2, 4))
 
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
 
     print(f"\n🎯 DONE -> {output_file} & {images_file}")
 

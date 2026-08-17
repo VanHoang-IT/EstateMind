@@ -5,10 +5,8 @@
 package com.hvh.repository;
 
 import com.hvh.pojo.ChatSession;
-import java.util.UUID;
 
 /**
- *
  * @author acer
  */
 public interface ChatSessionRepository {

@@ -29,10 +29,8 @@ public class ChatSessionRepositoryImpl implements ChatSessionRepository {
     public ChatSession saveSession(ChatSession chatSession) {
         Session session = this.factory.getObject().getCurrentSession();
 
-        if (chatSession.getId() != null)
-            session.merge(chatSession);
-        else
-            session.persist(chatSession);
+        if (chatSession.getId() != null) session.merge(chatSession);
+        else session.persist(chatSession);
 
         return chatSession;
     }

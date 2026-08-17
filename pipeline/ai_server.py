@@ -14,10 +14,6 @@ from langchain_google_genai import (
 from pydantic import BaseModel, Field
 
 
-# ============================================================
-# CẤU HÌNH
-# ============================================================
-
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -68,19 +64,11 @@ if not os.getenv("GOOGLE_API_KEY"):
 PERSIST_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ============================================================
-# FASTAPI
-# ============================================================
-
 app = FastAPI(
     title="EstateMind AI Assistant API",
-    version="1.0.0",
+    version="1.1.0",
 )
 
-
-# ============================================================
-# REQUEST / RESPONSE DTO
-# ============================================================
 
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
@@ -93,9 +81,16 @@ class ChatResponse(BaseModel):
     sources: list[dict[str, Any]] = Field(default_factory=list)
 
 
-# ============================================================
-# KHỞI TẠO MODEL VÀ VECTOR STORE
-# ============================================================
+class SearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=1000)
+    limit: int = Field(default=12, ge=1, le=50)
+
+
+class SearchResponse(BaseModel):
+    status: str
+    query: str
+    propertyIds: list[int] = Field(default_factory=list)
+
 
 logger.info("Đang khởi động AI Server.")
 logger.info("ChromaDB path: %s", PERSIST_DIR)
@@ -130,13 +125,7 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
-# ============================================================
-# HÀM TIỆN ÍCH
-# ============================================================
-
 def extract_text(content: Any) -> str:
-    """Chuẩn hóa nội dung phản hồi của Gemini thành chuỗi."""
-
     if isinstance(content, str):
         return content.strip()
 
@@ -200,15 +189,40 @@ def build_property_context(documents: list[Any]) -> str:
     return "\n".join(lines)
 
 
+def extract_ordered_property_ids(
+    documents: list[Any],
+    limit: int,
+) -> list[int]:
+    ordered_ids: list[int] = []
+    seen: set[int] = set()
+
+    for document in documents:
+        raw_id = document.metadata.get("property_id")
+
+        if raw_id is None:
+            continue
+
+        try:
+            property_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+
+        if property_id in seen:
+            continue
+
+        seen.add(property_id)
+        ordered_ids.append(property_id)
+
+        if len(ordered_ids) >= limit:
+            break
+
+    return ordered_ids
+
+
 def build_sources(
     property_documents: list[Any],
     legal_documents: list[Any],
 ) -> list[dict[str, Any]]:
-    """
-    Tạo danh sách nguồn để Java lưu vào chat_history.source_refs (jsonb).
-    Loại bỏ các chunk trùng nhau của cùng một property hoặc văn bản luật.
-    """
-
     sources: list[dict[str, Any]] = []
     seen_property_ids: set[Any] = set()
     seen_legal_ids: set[Any] = set()
@@ -303,10 +317,6 @@ def build_system_instruction(
     )
 
 
-# ============================================================
-# ENDPOINT
-# ============================================================
-
 @app.get("/health")
 def health_check() -> dict[str, Any]:
     return {
@@ -317,6 +327,45 @@ def health_check() -> dict[str, Any]:
         "chatModel": CHAT_MODEL,
         "embeddingModel": EMBEDDING_MODEL,
     }
+
+
+@app.post("/api/search", response_model=SearchResponse)
+def search_properties(request: SearchRequest) -> SearchResponse:
+    query = request.query.strip()
+
+    logger.info("Tìm kiếm ngôn ngữ tự nhiên: %s", query)
+
+    try:
+        documents = property_store.similarity_search(
+            query,
+            k=request.limit * 3,
+        )
+
+        property_ids = extract_ordered_property_ids(
+            documents,
+            request.limit,
+        )
+
+        logger.info(
+            "Tìm thấy %s property từ %s chunk.",
+            len(property_ids),
+            len(documents),
+        )
+
+        return SearchResponse(
+            status="success",
+            query=query,
+            propertyIds=property_ids,
+        )
+
+    except Exception:
+        logger.exception("Lỗi khi tìm kiếm ngữ nghĩa.")
+
+        return SearchResponse(
+            status="error",
+            query=query,
+            propertyIds=[],
+        )
 
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -330,7 +379,6 @@ def chat_with_ai(request: ChatRequest) -> ChatResponse:
     )
 
     try:
-        # Hai thao tác dưới đây đang chạy tuần tự.
         property_documents = property_store.similarity_search(
             question,
             k=TOP_K_PROPERTY,
@@ -386,7 +434,6 @@ def chat_with_ai(request: ChatRequest) -> ChatResponse:
     except Exception:
         logger.exception("Lỗi khi xử lý câu hỏi bằng AI.")
 
-        # Không gửi API key, stack trace hoặc lỗi kỹ thuật về frontend.
         return ChatResponse(
             status="error",
             answer=(

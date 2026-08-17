@@ -4,28 +4,36 @@
  */
 
 package com.hvh.dto;
+
 /**
- *
  * @author acer
  */
-
-
 public class UserSummaryDTO {
 
     private Integer id;
+
     private String username;
+
     private String firstName;
+
     private String lastName;
+
     private String email;
+
     private String phone;
+
     private String avatar;
 
-    public UserSummaryDTO() {
-    }
+    public UserSummaryDTO() {}
 
-    public UserSummaryDTO(Integer id, String username, String firstName,
-                          String lastName, String email, String phone,
-                          String avatar) {
+    public UserSummaryDTO(
+            Integer id,
+            String username,
+            String firstName,
+            String lastName,
+            String email,
+            String phone,
+            String avatar) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;

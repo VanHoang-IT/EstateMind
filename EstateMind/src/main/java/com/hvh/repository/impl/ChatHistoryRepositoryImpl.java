@@ -4,8 +4,6 @@
  */
 package com.hvh.repository.impl;
 
-
-
 import com.hvh.pojo.ChatHistory;
 import com.hvh.repository.ChatHistoryRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -18,8 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
 /**
- *
  * @author acer
  */
 /*

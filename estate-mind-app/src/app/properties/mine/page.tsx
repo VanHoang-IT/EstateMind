@@ -6,17 +6,19 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { propertyService } from "@/services/propertyService";
-import { Property } from "@/types/property";
-
-const STATUS_OPTIONS = [
+import { ModerationStatus, Property } from "@/types/property";
+import { formatPrice } from "@/lib/format";
+const STATUS_OPTIONS: {
+  value: ModerationStatus | "";
+  label: string;
+}[] = [
   { value: "", label: "Tất cả" },
   { value: "PENDING", label: "Chờ duyệt" },
-  { value: "AVAILABLE", label: "Đang bán" },
-  { value: "RENT", label: "Cho thuê" },
-  { value: "SOLD", label: "Đã bán" },
+  { value: "APPROVED", label: "Đã duyệt" },
+  { value: "REJECTED", label: "Đã từ chối" },
 ];
 
-function statusBadge(status?: string) {
+function statusBadge(status?: ModerationStatus) {
   switch (status) {
     case "PENDING":
       return (
@@ -24,38 +26,24 @@ function statusBadge(status?: string) {
           Chờ duyệt
         </span>
       );
-    case "AVAILABLE":
+
+    case "APPROVED":
       return (
         <span className="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-950/50 dark:text-green-300">
-          Đang bán
+          Đã duyệt
         </span>
       );
-    case "RENT":
+
+    case "REJECTED":
       return (
-        <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-          Cho thuê
+        <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+          Đã từ chối
         </span>
       );
-    case "SOLD":
-      return (
-        <span className="inline-flex rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold text-gray-700 dark:bg-slate-700 dark:text-slate-300">
-          Đã bán
-        </span>
-      );
+
     default:
       return null;
   }
-}
-
-function formatPrice(price: number): string {
-  if (price >= 1_000_000_000) {
-    const billions = price / 1_000_000_000;
-    return `${Number.isInteger(billions) ? billions : billions.toFixed(1)} tỷ`;
-  }
-  if (price >= 1_000_000) {
-    return `${Math.round(price / 1_000_000)} triệu`;
-  }
-  return `${price.toLocaleString("vi-VN")} đ`;
 }
 
 export default function MyPropertiesPage() {
@@ -63,7 +51,7 @@ export default function MyPropertiesPage() {
   const router = useRouter();
 
   const [properties, setProperties] = useState<Property[]>([]);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ModerationStatus | "">("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,17 +69,19 @@ export default function MyPropertiesPage() {
 
     const timer = setTimeout(async () => {
       setLoading(true);
+
       try {
         const data = await propertyService.getProperties({
           sellerId: user.id,
-          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(statusFilter ? { moderationStatus: statusFilter } : {}),
           page: 1,
           size: 50,
         });
+
         setProperties(data.items ?? []);
         setError(null);
       } catch {
-        setError("Không thể tải danh sách tin đã đăng.");
+        setError("Không thể tải danh sách tin đăng.");
       } finally {
         setLoading(false);
       }
@@ -113,13 +103,16 @@ export default function MyPropertiesPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Tin đã đăng
+            Tin đăng của tôi
           </h1>
 
           <div className="flex items-center gap-3">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as ModerationStatus | "")
+              }
+              aria-label="Lọc tin đăng theo trạng thái"
               className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             >
               {STATUS_OPTIONS.map((option) => (
@@ -133,14 +126,14 @@ export default function MyPropertiesPage() {
               href="/"
               className="text-sm font-medium text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
             >
-              ← Về trang chủ
+              ← Về Trang chủ
             </Link>
           </div>
         </div>
 
         {loading && (
           <div className="flex min-h-40 items-center justify-center text-gray-500 dark:text-slate-400">
-            Đang tải danh sách...
+            Đang tải danh sách tin đăng...
           </div>
         )}
 
@@ -155,7 +148,7 @@ export default function MyPropertiesPage() {
 
         {!loading && !error && properties.length === 0 && (
           <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-            Không có tin nào.
+            Chưa có tin đăng nào.
           </div>
         )}
 
@@ -177,7 +170,9 @@ export default function MyPropertiesPage() {
                 </Link>
 
                 <div className="flex flex-1 flex-col p-4">
-                  <div className="mb-2">{statusBadge(property.status)}</div>
+                  <div className="mb-2">
+                    {statusBadge(property.moderationStatus)}
+                  </div>
 
                   <Link href={`/properties/${property.id}`}>
                     <h2 className="line-clamp-2 font-semibold text-gray-900 hover:text-red-600 dark:text-white dark:hover:text-red-400">
@@ -186,14 +181,14 @@ export default function MyPropertiesPage() {
                   </Link>
 
                   <p className="mt-1 line-clamp-1 text-sm text-gray-500 dark:text-slate-400">
-                    {property.address}
+                    {property.address || "Chưa cập nhật địa chỉ"}
                   </p>
 
                   <p className="mt-2 font-bold text-red-600 dark:text-red-400">
                     {formatPrice(Number(property.price))}
                   </p>
 
-                  {property.status === "PENDING" && (
+                  {property.moderationStatus === "PENDING" && (
                     <div className="mt-3">
                       <Link
                         href={`/properties/${property.id}/edit`}
@@ -203,6 +198,14 @@ export default function MyPropertiesPage() {
                       </Link>
                     </div>
                   )}
+
+                  {property.moderationStatus === "REJECTED" &&
+                    property.rejectionReason && (
+                      <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs leading-5 text-red-700 dark:bg-red-950/30 dark:text-red-300">
+                        <span className="font-semibold">Lý do từ chối: </span>
+                        {property.rejectionReason}
+                      </div>
+                    )}
                 </div>
               </div>
             ))}

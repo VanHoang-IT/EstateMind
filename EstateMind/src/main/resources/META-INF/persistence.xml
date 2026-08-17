@@ -32,5 +32,6 @@
     <class>com.hvh.pojo.Review</class>
     <class>com.hvh.pojo.GeographyColumns</class>
     <class>com.hvh.pojo.ChatSession</class>
+    <class>com.hvh.pojo.Article</class>
   </persistence-unit>
 </persistence>

@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- *
  * @author acer
  */
 @Entity
@@ -30,40 +29,59 @@ import java.util.Date;
 @XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "CustomerProfile.findAll", query = "SELECT c FROM CustomerProfile c"),
-    @NamedQuery(name = "CustomerProfile.findById", query = "SELECT c FROM CustomerProfile c WHERE c.id = :id"),
-    @NamedQuery(name = "CustomerProfile.findByAddress", query = "SELECT c FROM CustomerProfile c WHERE c.address = :address"),
-    @NamedQuery(name = "CustomerProfile.findByIdentityNumber", query = "SELECT c FROM CustomerProfile c WHERE c.identityNumber = :identityNumber"),
-    @NamedQuery(name = "CustomerProfile.findByIdentityVerified", query = "SELECT c FROM CustomerProfile c WHERE c.identityVerified = :identityVerified"),
-    @NamedQuery(name = "CustomerProfile.findByCreatedAt", query = "SELECT c FROM CustomerProfile c WHERE c.createdAt = :createdAt"),
-    @NamedQuery(name = "CustomerProfile.findByUpdatedAt", query = "SELECT c FROM CustomerProfile c WHERE c.updatedAt = :updatedAt")})
+    @NamedQuery(
+            name = "CustomerProfile.findById",
+            query = "SELECT c FROM CustomerProfile c WHERE c.id = :id"),
+    @NamedQuery(
+            name = "CustomerProfile.findByAddress",
+            query = "SELECT c FROM CustomerProfile c WHERE c.address = :address"),
+    @NamedQuery(
+            name = "CustomerProfile.findByIdentityNumber",
+            query = "SELECT c FROM CustomerProfile c WHERE c.identityNumber = :identityNumber"),
+    @NamedQuery(
+            name = "CustomerProfile.findByIdentityVerified",
+            query = "SELECT c FROM CustomerProfile c WHERE c.identityVerified = :identityVerified"),
+    @NamedQuery(
+            name = "CustomerProfile.findByCreatedAt",
+            query = "SELECT c FROM CustomerProfile c WHERE c.createdAt = :createdAt"),
+    @NamedQuery(
+            name = "CustomerProfile.findByUpdatedAt",
+            query = "SELECT c FROM CustomerProfile c WHERE c.updatedAt = :updatedAt")
+})
 public class CustomerProfile implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @Basic(optional = false)
     @NotNull
     @Column(name = "id")
     private Integer id;
+
     @Size(max = 2147483647)
     @Column(name = "address")
     private String address;
+
     @Size(max = 50)
     @Column(name = "identity_number")
     private String identityNumber;
+
     @Column(name = "identity_verified")
     private Boolean identityVerified;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+
     @JoinColumn(name = "id", referencedColumnName = "id", insertable = false, updatable = false)
     @OneToOne(optional = false)
     private Users users;
 
-    public CustomerProfile() {
-    }
+    public CustomerProfile() {}
 
     public CustomerProfile(Integer id) {
         this.id = id;
@@ -139,7 +157,8 @@ public class CustomerProfile implements Serializable {
             return false;
         }
         CustomerProfile other = (CustomerProfile) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+        if ((this.id == null && other.id != null)
+                || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
         return true;
@@ -149,5 +168,4 @@ public class CustomerProfile implements Serializable {
     public String toString() {
         return "com.hvh.pojo.CustomerProfile[ id=" + id + " ]";
     }
-    
 }

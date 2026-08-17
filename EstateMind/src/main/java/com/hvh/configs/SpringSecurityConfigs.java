@@ -6,7 +6,6 @@ package com.hvh.configs;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -18,14 +17,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+
 /**
- *
  * @author acer
  */
 @Configuration
 @EnableWebSecurity
 @EnableTransactionManagement
-@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(
+        prePostEnabled = true)
 @PropertySource("classpath:configs.properties")
 @ComponentScan(
         basePackages = {
@@ -33,8 +33,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
             "com.hvh.repository",
             "com.hvh.service",
             "com.hvh.payment",
-        }
-)
+        })
 public class SpringSecurityConfigs {
     @Value("${cloudinary.cloud_name}")
     private String cloudinaryCloudName;
@@ -57,24 +56,32 @@ public class SpringSecurityConfigs {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/admin/**", "/", "/login").csrf(c -> c.disable()).authorizeHttpRequests((requests) -> requests
-                .requestMatchers("/", "/admin").hasRole("ADMIN")
-                .anyRequest().permitAll()
-        ).formLogin(form -> form.loginPage("/admin/login")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/", true)
-                .failureUrl("/admin/login?error=true")
-                .permitAll()
-        ).logout((logout) -> logout.logoutSuccessUrl("/admin/login").permitAll());
+        http.securityMatcher("/admin/**", "/", "/login")
+                .csrf(c -> c.disable())
+                .authorizeHttpRequests(
+                        (requests) ->
+                                requests.requestMatchers("/", "/admin")
+                                        .hasRole("ADMIN")
+                                        .anyRequest()
+                                        .permitAll())
+                .formLogin(
+                        form ->
+                                form.loginPage("/admin/login")
+                                        .loginProcessingUrl("/login")
+                                        .defaultSuccessUrl("/", true)
+                                        .failureUrl("/admin/login?error=true")
+                                        .permitAll())
+                .logout((logout) -> logout.logoutSuccessUrl("/admin/login").permitAll());
         return http.build();
     }
 
     @Bean
     public Cloudinary cloudinary() {
-        return new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", cloudinaryCloudName,
-                "api_key", cloudinaryApiKey,
-                "api_secret", cloudinaryApiSecret,
-                "secure", true));
+        return new Cloudinary(
+                ObjectUtils.asMap(
+                        "cloud_name", cloudinaryCloudName,
+                        "api_key", cloudinaryApiKey,
+                        "api_secret", cloudinaryApiSecret,
+                        "secure", true));
     }
 }

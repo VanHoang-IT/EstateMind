@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 import { useAuth } from "@/contexts/AuthContext";
 
 type LoginErrors = {
@@ -12,14 +13,16 @@ type LoginErrors = {
 
 function getReadableError(error: unknown): string {
   if (!(error instanceof Error)) {
-    return "Đăng nhập thất bại";
+    return "Đăng nhập không thành công. Vui lòng thử lại.";
   }
 
   const rawMessage = error.message?.trim();
 
   if (!rawMessage) {
-    return "Đăng nhập thất bại";
+    return "Đăng nhập không thành công. Vui lòng thử lại.";
   }
+
+  let message = rawMessage;
 
   if (rawMessage.includes("<!doctype html") || rawMessage.includes("<html")) {
     const documentHtml = new DOMParser().parseFromString(
@@ -34,14 +37,40 @@ function getReadableError(error: unknown): string {
         paragraph.querySelector("b")?.textContent?.trim() === "Message",
     );
 
-    const message = messageParagraph?.textContent
-      ?.replace(/^Message\s*/i, "")
-      .trim();
-
-    return message || "Đăng nhập thất bại";
+    message =
+      messageParagraph?.textContent?.replace(/^Message\s*/i, "").trim() || "";
   }
 
-  return rawMessage;
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("sai tên đăng nhập") ||
+    normalized.includes("sai mật khẩu") ||
+    normalized.includes("tên đăng nhập hoặc mật khẩu") ||
+    normalized.includes("invalid username") ||
+    normalized.includes("invalid password") ||
+    normalized.includes("bad credentials")
+  ) {
+    return "Tên đăng nhập hoặc mật khẩu không chính xác.";
+  }
+
+  if (
+    normalized.includes("tài khoản bị khóa") ||
+    normalized.includes("account is locked") ||
+    normalized.includes("account locked") ||
+    normalized.includes("disabled")
+  ) {
+    return "Tài khoản này hiện không khả dụng.";
+  }
+
+  if (
+    normalized.includes("không tìm thấy") ||
+    normalized.includes("not found")
+  ) {
+    return "Tên đăng nhập hoặc mật khẩu không chính xác.";
+  }
+
+  return message || "Đăng nhập không thành công. Vui lòng thử lại.";
 }
 
 export default function LoginPage() {
@@ -58,11 +87,11 @@ export default function LoginPage() {
     const nextErrors: LoginErrors = {};
 
     if (!username.trim()) {
-      nextErrors.username = "Vui lòng nhập tên đăng nhập";
+      nextErrors.username = "Vui lòng nhập tên đăng nhập.";
     }
 
     if (!password.trim()) {
-      nextErrors.password = "Vui lòng nhập mật khẩu";
+      nextErrors.password = "Vui lòng nhập mật khẩu.";
     }
 
     setErrors(nextErrors);
@@ -92,16 +121,19 @@ export default function LoginPage() {
       const normalized = message.toLowerCase();
 
       if (
-        normalized.includes("tên đăng nhập") ||
-        normalized.includes("username")
+        (normalized.includes("username") ||
+          normalized.includes("tên đăng nhập")) &&
+        !normalized.includes("password") &&
+        !normalized.includes("mật khẩu")
       ) {
         setErrors((current) => ({
           ...current,
           username: message,
         }));
       } else if (
-        normalized.includes("mật khẩu") ||
-        normalized.includes("password")
+        (normalized.includes("password") || normalized.includes("mật khẩu")) &&
+        !normalized.includes("username") &&
+        !normalized.includes("tên đăng nhập")
       ) {
         setErrors((current) => ({
           ...current,
@@ -220,7 +252,7 @@ export default function LoginPage() {
             href="/register"
             className="font-medium text-red-500 hover:underline"
           >
-            Đăng ký
+            Tạo tài khoản
           </Link>
         </p>
       </div>

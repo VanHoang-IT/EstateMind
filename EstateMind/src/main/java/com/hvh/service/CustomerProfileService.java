@@ -6,13 +6,14 @@ package com.hvh.service;
 
 import com.hvh.pojo.CustomerProfile;
 import com.hvh.pojo.Users;
+
 /**
- *
  * @author acer
  */
 public interface CustomerProfileService {
     CustomerProfile createProfileForUser(Users user);
+
     CustomerProfile getByUserId(int userId);
+
     CustomerProfile updateProfile(CustomerProfile profile);
 }
-

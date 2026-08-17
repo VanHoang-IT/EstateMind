@@ -20,6 +20,7 @@ function renderMarkdown(text: string) {
       if (part.startsWith("**") && part.endsWith("**")) {
         return <strong key={j}>{part.slice(2, -2)}</strong>;
       }
+
       return <Fragment key={j}>{part}</Fragment>;
     });
 
@@ -31,9 +32,11 @@ function renderMarkdown(text: string) {
         </div>
       );
     }
+
     if (trimmed === "") {
       return <div key={i} className="h-2" />;
     }
+
     return <p key={i}>{parts}</p>;
   });
 }
@@ -57,8 +60,12 @@ export default function ChatWidget() {
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
+
     const question = input.trim();
-    if (!question || sending) return;
+
+    if (!question || sending) {
+      return;
+    }
 
     setMessages((m) => [...m, { role: "user", text: question }]);
     setInput("");
@@ -66,6 +73,7 @@ export default function ChatWidget() {
 
     try {
       const res = await chatService.ask(question, sessionId);
+
       setSessionId(res.sessionId);
       setMessages((m) => [...m, { role: "assistant", text: res.answer }]);
     } catch {
@@ -84,50 +92,57 @@ export default function ChatWidget() {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {open && (
-        <div className="w-96 h-[28rem] bg-white border border-gray-200 rounded-lg shadow-xl flex flex-col mb-3 overflow-hidden">
-          <div className="bg-red-500 text-white px-4 py-3 font-semibold flex justify-between items-center">
+        <div className="mb-3 flex h-[28rem] w-96 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+          <div className="flex items-center justify-between bg-red-500 px-4 py-3 font-semibold text-white">
             <span>Hỗ trợ AI</span>
+
             <button
+              type="button"
               onClick={() => setOpen(false)}
+              aria-label="Đóng cửa sổ hỗ trợ AI"
               className="text-white/80 hover:text-white"
             >
               ✕
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+          <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={`text-sm px-3 py-2 rounded-lg max-w-[90%] leading-relaxed ${
+                className={`max-w-[90%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
                   m.role === "user"
-                    ? "bg-red-500 text-white ml-auto"
+                    ? "ml-auto bg-red-500 text-white"
                     : "bg-gray-100 text-gray-800"
                 }`}
               >
                 {m.role === "assistant" ? renderMarkdown(m.text) : m.text}
               </div>
             ))}
+
             {sending && (
-              <div className="text-xs text-gray-400 px-1">Đang trả lời...</div>
+              <div className="px-1 text-xs text-gray-400">Đang trả lời...</div>
             )}
+
             <div ref={bottomRef} />
           </div>
 
           <form
             onSubmit={handleSend}
-            className="border-t border-gray-100 p-2 flex gap-2"
+            className="flex gap-2 border-t border-gray-100 p-2"
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Nhập câu hỏi..."
-              className="flex-1 text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:border-red-500"
+              aria-label="Nhập câu hỏi cho trợ lý AI"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-red-500 focus:outline-none"
             />
+
             <button
               type="submit"
               disabled={sending}
-              className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-3 rounded-md disabled:opacity-50"
+              className="rounded-md bg-red-500 px-3 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
             >
               Gửi
             </button>
@@ -136,9 +151,10 @@ export default function ChatWidget() {
       )}
 
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg flex items-center justify-center text-2xl transition-transform hover:scale-105"
-        aria-label="Mở chat hỗ trợ"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-2xl text-white shadow-lg transition-transform hover:scale-105 hover:bg-red-600"
+        aria-label={open ? "Đóng chat hỗ trợ" : "Mở chat hỗ trợ"}
       >
         {open ? "✕" : "💬"}
       </button>

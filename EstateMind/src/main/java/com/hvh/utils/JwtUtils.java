@@ -5,10 +5,8 @@
 package com.hvh.utils;
 
 /**
- *
  * @author acer
  */
-
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
@@ -21,6 +19,7 @@ import java.util.Date;
 
 public class JwtUtils {
     private static final String SECRET = resolveSecret();
+
     private static final long EXPIRATION_MS = 86400000;
 
     private static String resolveSecret() {
@@ -28,24 +27,23 @@ public class JwtUtils {
         if (fromEnv != null && fromEnv.length() >= 32) {
             return fromEnv;
         }
-        System.err.println("[WARNING] JWT_SECRET env var not set (or too short, needs >= 32 chars). "
-                + "Using an insecure development-only fallback. Set JWT_SECRET before deploying.");
+        System.err.println(
+                "[WARNING] JWT_SECRET env var not set (or too short, needs >= 32 chars). Using an"
+                        + " insecure development-only fallback. Set JWT_SECRET before deploying.");
         return "dev-only-insecure-secret-32chars!!";
     }
 
     public static String generateToken(String username) throws Exception {
         JWSSigner signer = new MACSigner(SECRET);
 
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject(username)
-                .expirationTime(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .issueTime(new Date())
-                .build();
+        JWTClaimsSet claimsSet =
+                new JWTClaimsSet.Builder()
+                        .subject(username)
+                        .expirationTime(new Date(System.currentTimeMillis() + EXPIRATION_MS))
+                        .issueTime(new Date())
+                        .build();
 
-        SignedJWT signedJWT = new SignedJWT(
-                new JWSHeader(JWSAlgorithm.HS256),
-                claimsSet
-        );
+        SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
 
         signedJWT.sign(signer);
 
