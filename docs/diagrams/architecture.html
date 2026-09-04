@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EstateMind · Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · EstateMind</p>
+    <h1>EstateMind · sơ đồ kiến trúc hệ thống</h1>
+
+    <svg viewBox="0 0 1040 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="arch-title arch-desc">
+      <title id="arch-title">EstateMind system architecture</title>
+      <desc id="arch-desc">Architecture diagram showing browser requests flowing through a Next.js frontend and Spring backend to a FastAPI AI server, which queries ChromaDB and the external Google Gemini API, all backed by a shared PostgreSQL/PostGIS database.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Zone: Docker network (drawn before arrows and nodes) -->
+      <rect x="216" y="40" width="636" height="252" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <rect x="256" y="44" width="120" height="12" fill="#f5f5f5"/>
+      <text x="316" y="53" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DOCKER NETWORK</text>
+
+      <!-- Arrows (behind nodes) -->
+      <line x1="160" y1="104" x2="232" y2="104" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+      <path d="M 100,136 V 164 Q 100,172 108,172 H 504 Q 512,172 512,164 V 136" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+      <line x1="376" y1="104" x2="460" y2="104" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="612" y1="104" x2="696" y2="104" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="560" y1="136" x2="560" y2="212" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <line x1="612" y1="244" x2="696" y2="244" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M 584,212 V 180 Q 584,172 592,172 H 938 Q 946,172 946,164 V 136" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+
+      <!-- Arrow labels -->
+      <rect x="168" y="84" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="198" y="93" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTP:3000</text>
+
+      <rect x="278" y="152" width="56" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="306" y="161" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTP:8080</text>
+
+      <rect x="390" y="84" width="56" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="418" y="93" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SSR FETCH</text>
+
+      <rect x="626" y="84" width="56" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="654" y="93" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">JDBC:5432</text>
+
+      <rect x="568" y="168" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="600" y="177" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RAG QUERY</text>
+
+      <rect x="620" y="224" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="654" y="233" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SIMILARITY</text>
+
+      <rect x="737" y="152" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="757" y="161" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTPS</text>
+
+      <!-- Node: Browser (input/user) -->
+      <rect x="40" y="72" width="120" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="72" width="120" height="64" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <rect x="48" y="80" width="28" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8"/>
+      <text x="62" y="89" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">WEB</text>
+      <text x="100" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Browser</text>
+      <text x="100" y="124" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">User agent</text>
+
+      <!-- Node: Frontend -->
+      <rect x="232" y="72" width="144" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="232" y="72" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="240" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="256" y="89" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
+      <text x="304" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Frontend</text>
+      <text x="304" y="124" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Next.js · :3000</text>
+
+      <!-- Node: Backend -->
+      <rect x="460" y="72" width="152" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="460" y="72" width="152" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="468" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="484" y="89" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">API</text>
+      <text x="536" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Backend</text>
+      <text x="536" y="124" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Spring · Tomcat 10 · :8080</text>
+
+      <!-- Node: PostgreSQL (focal) -->
+      <rect x="696" y="72" width="140" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="696" y="72" width="140" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="704" y="80" width="24" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <text x="716" y="89" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">DB</text>
+      <text x="766" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PostgreSQL</text>
+      <text x="766" y="124" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">PostGIS · :5432</text>
+
+      <!-- Node: Gemini API (external) -->
+      <rect x="880" y="72" width="132" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="880" y="72" width="132" height="64" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="888" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/>
+      <text x="904" y="89" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+      <text x="946" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Gemini API</text>
+      <text x="946" y="124" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Google · chat + embed</text>
+
+      <!-- Node: AI Server (focal) -->
+      <rect x="460" y="212" width="152" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="460" y="212" width="152" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="468" y="220" width="32" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <text x="484" y="229" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SVC</text>
+      <text x="536" y="248" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AI Server</text>
+      <text x="536" y="264" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">FastAPI · LangChain · :8000</text>
+
+      <!-- Node: ChromaDB (store) -->
+      <rect x="696" y="212" width="140" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="696" y="212" width="140" height="64" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="704" y="220" width="40" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.50)" stroke-width="0.8"/>
+      <text x="724" y="229" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+      <text x="766" y="248" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">ChromaDB</text>
+      <text x="766" y="264" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Vector store · :8000</text>
+
+      <!-- Legend strip -->
+      <line x1="40" y1="332" x2="1000" y2="332" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="348" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="40" y="364" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="60" y="372" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Focal / core</text>
+
+      <rect x="180" y="364" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="200" y="372" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">App / API</text>
+
+      <rect x="320" y="364" width="14" height="10" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="340" y="372" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Store</text>
+
+      <rect x="420" y="364" width="14" height="10" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="440" y="372" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">External</text>
+
+      <line x1="540" y1="368" x2="568" y2="368" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+      <text x="576" y="372" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Cross-network / HTTP</text>
+
+      <line x1="760" y1="368" x2="788" y2="368" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="796" y="372" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">In-network call</text>
+    </svg>
+  </div>
+</body>
+</html>

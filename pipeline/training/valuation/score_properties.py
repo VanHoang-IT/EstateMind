@@ -228,7 +228,7 @@ def clear_scores(engine, ids):
 
 def main():
     if not MODEL_PATH.exists():
-        print(f"❌ Chưa có model tại {MODEL_PATH}. Chạy train_valuation_v4.py trước.")
+        print(f"❌ Chưa có model tại {MODEL_PATH}. Chạy train_valuation.py trước.")
         return
 
     artifact = joblib.load(MODEL_PATH)
@@ -288,7 +288,7 @@ def main():
 
     log_ratio = np.log(predicted_price) - np.log(actual_price)
 
-    sigma = robust_sigma(log_ratio)
+    sigma = float(artifact.get("sigma_oof") or robust_sigma(log_ratio))
 
     print(f"\nSigma (do lech chuan robust cua log-ratio): {sigma:.4f}")
 

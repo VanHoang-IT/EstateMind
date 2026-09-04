@@ -358,4 +358,25 @@ public class ApiAdminController {
             );
         }
     }
+    
+    @PatchMapping("/verifications/{userId}/reject")
+    public ResponseEntity<?> rejectVerification(@PathVariable("userId") int userId) {
+        try {
+            this.userService.rejectVerification(userId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+ 
+    @GetMapping(
+            value = "/verifications",
+            produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<com.hvh.dto.VerificationQueueDTO>> getVerificationQueue(
+            @RequestParam(name = "role", required = false) String role) {
+        return new ResponseEntity<>(
+                this.userService.getVerificationQueue(role), HttpStatus.OK);
+    }
 }

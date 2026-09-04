@@ -6,6 +6,7 @@ package com.hvh.repository.impl;
 
 import com.hvh.pojo.SellerProfile;
 import com.hvh.repository.SellerProfileRepository;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,5 +47,18 @@ public class SellerProfileRepositoryImpl implements SellerProfileRepository {
     public SellerProfile updateProfile(SellerProfile profile) {
         Session session = this.factory.getObject().getCurrentSession();
         return session.merge(profile);
+    }
+    
+    @Override
+    public List<SellerProfile> getPendingVerification() {
+        Session session = this.factory.getObject().getCurrentSession();
+ 
+        Query<SellerProfile> query =
+                session.createQuery(
+                        "FROM SellerProfile s WHERE s.isVerified IS NULL OR s.isVerified = false"
+                                + " ORDER BY s.updatedAt DESC",
+                        SellerProfile.class);
+ 
+        return query.getResultList();
     }
 }

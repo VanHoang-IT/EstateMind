@@ -1,0 +1,6 @@
+target
+.git
+*.class
+.settings
+.project
+.classpath

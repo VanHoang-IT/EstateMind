@@ -9,6 +9,7 @@ import com.hvh.pojo.Users;
 import com.hvh.repository.CustomerProfileRepository;
 import com.hvh.service.CustomerProfileService;
 import java.util.Date;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,5 +62,11 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     @Transactional
     public CustomerProfile updateProfile(CustomerProfile profile) {
         return this.customerProfileRepo.updateProfile(profile);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<CustomerProfile> getPendingVerification() {
+        return this.customerProfileRepo.getPendingVerification();
     }
 }

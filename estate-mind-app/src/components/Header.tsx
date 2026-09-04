@@ -84,9 +84,9 @@ export default function Header() {
   }
 
   const initials = getInitials(
-    user?.firstName,
-    user?.lastName,
-    user?.username || "EM",
+    `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() ||
+      user?.username ||
+      "EM",
   );
 
   const menuLinkClass = `

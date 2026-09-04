@@ -5,6 +5,7 @@
 package com.hvh.repository;
 
 import com.hvh.pojo.SellerProfile;
+import java.util.List;
 
 /**
  * @author acer
@@ -15,4 +16,6 @@ public interface SellerProfileRepository {
     SellerProfile getByUserId(int userId);
 
     SellerProfile updateProfile(SellerProfile profile);
+    
+    List<SellerProfile> getPendingVerification();
 }

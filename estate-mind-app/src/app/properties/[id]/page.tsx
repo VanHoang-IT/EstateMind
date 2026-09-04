@@ -58,20 +58,6 @@ function formatStatus(status?: string, categoryId?: number): string {
   }
 }
 
-function formatCrawlDate(value?: string): string {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toLocaleDateString("vi-VN");
-}
-
 function getSellerName(property: Property): string {
   const seller = property.sellerId;
 
@@ -140,10 +126,6 @@ export default async function PropertyDetailPage({ params }: Props) {
     validImageUrls.length > 0 ? [...new Set(validImageUrls)] : [FALLBACK_IMAGE];
 
   const sellerName = getSellerName(property);
-
-  const isCrawled = Boolean(property.urlCrawl);
-
-  const crawledDateLabel = formatCrawlDate(property.crawlDate);
 
   const categoryId = property.categoryId?.id;
 
@@ -291,87 +273,55 @@ export default async function PropertyDetailPage({ params }: Props) {
           </section>
 
           <aside className="lg:col-span-1">
-            {isCrawled ? (
-              <div className="rounded-xl border border-[#e2e7e4] bg-white p-5 lg:sticky lg:top-20">
-                <h3 className="mb-3 font-bold text-[#202523]">
-                  Nguồn tin đăng
-                </h3>
+            <div className="rounded-xl border border-[#e2e7e4] bg-white p-5 lg:sticky lg:top-20">
+              <h3 className="mb-4 font-bold text-[#202523]">Người đăng tin</h3>
 
-                <p className="text-sm leading-6 text-[#66716b]">
-                  Tin này không do EstateMind đăng bán. Thông tin liên hệ thuộc
-                  về người đăng gốc trên {property.urlCrawl}.
-                </p>
-
-                {crawledDateLabel && (
-                  <p className="mt-3 text-xs text-[#9ba49f]">
-                    Thu thập ngày {crawledDateLabel}
-                  </p>
-                )}
-
-                {property.url && (
-                  <a
-                    href={property.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 block rounded-lg bg-[#007a5a] py-2.5 text-center font-semibold text-white transition-colors hover:bg-[#006648]"
-                  >
-                    Xem tin gốc
-                  </a>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-[#e2e7e4] bg-white p-5 lg:sticky lg:top-20">
-                <h3 className="mb-4 font-bold text-[#202523]">
-                  Người đăng tin
-                </h3>
-
-                <div className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-                    <Image
-                      src={property.sellerId?.avatar || "/default-avatar.png"}
-                      alt={`Avatar của ${sellerName}`}
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-[#3d4742]">
-                      {sellerName}
-                    </p>
-
-                    {property.sellerId?.username && (
-                      <p className="truncate text-xs text-[#9ba49f]">
-                        @{property.sellerId.username}
-                      </p>
-                    )}
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+                  <Image
+                    src={property.sellerId?.avatar || "/default-avatar.png"}
+                    alt={`Avatar của ${sellerName}`}
+                    fill
+                    sizes="48px"
+                    className="object-cover"
+                  />
                 </div>
 
-                {property.sellerId?.phone ? (
-                  <a
-                    href={`tel:${property.sellerId.phone}`}
-                    className="mt-4 block rounded-lg bg-[#007a5a] py-2.5 text-center font-semibold text-white transition-colors hover:bg-[#006648]"
-                  >
-                    📞 {property.sellerId.phone}
-                  </a>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-400">
-                    Người đăng chưa công khai số điện thoại.
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[#3d4742]">
+                    {sellerName}
                   </p>
-                )}
 
-                {property.sellerId?.email && (
-                  <a
-                    href={`mailto:${property.sellerId.email}`}
-                    className="mt-2 block rounded-lg border border-[#e2e7e4] py-2.5 text-center font-medium text-[#3d4742] transition-colors hover:border-[#007a5a] hover:text-[#007a5a]"
-                  >
-                    Gửi email
-                  </a>
-                )}
+                  {property.sellerId?.username && (
+                    <p className="truncate text-xs text-[#9ba49f]">
+                      @{property.sellerId.username}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
+
+              {property.sellerId?.phone ? (
+                <a
+                  href={`tel:${property.sellerId.phone}`}
+                  className="mt-4 block rounded-lg bg-[#007a5a] py-2.5 text-center font-semibold text-white transition-colors hover:bg-[#006648]"
+                >
+                  📞 {property.sellerId.phone}
+                </a>
+              ) : (
+                <p className="mt-4 text-sm text-gray-400">
+                  Người đăng chưa công khai số điện thoại.
+                </p>
+              )}
+
+              {property.sellerId?.email && (
+                <a
+                  href={`mailto:${property.sellerId.email}`}
+                  className="mt-2 block rounded-lg border border-[#e2e7e4] py-2.5 text-center font-medium text-[#3d4742] transition-colors hover:border-[#007a5a] hover:text-[#007a5a]"
+                >
+                  Gửi email
+                </a>
+              )}
+            </div>
           </aside>
         </div>
       </main>

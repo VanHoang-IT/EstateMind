@@ -8,6 +8,7 @@ import com.hvh.pojo.Users;
 import com.hvh.repository.ChatHistoryRepository;
 import com.hvh.repository.ChatSessionRepository;
 import com.hvh.service.RagChatService;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +30,14 @@ public class RagChatServiceImpl implements RagChatService {
 
     private static final Logger logger = LoggerFactory.getLogger(RagChatServiceImpl.class);
 
-    private static final String PYTHON_AI_URL = "http://localhost:8000/api/chat";
+    // Số lượt hỏi-đáp gần nhất gửi kèm làm ngữ cảnh hội thoại cho AI server.
+    private static final int MAX_HISTORY_TURNS = 6;
+
+    private static final String PYTHON_AI_URL =
+            (System.getenv("AI_SERVER_URL") != null
+                            ? System.getenv("AI_SERVER_URL")
+                            : "http://localhost:8000")
+                    + "/api/chat";
 
     @Autowired
     private ChatSessionRepository chatSessionRepository;
@@ -48,7 +56,7 @@ public class RagChatServiceImpl implements RagChatService {
 
         // Dùng số mili giây để tương thích với nhiều phiên bản Spring.
         factory.setConnectTimeout(5_000);
-        factory.setReadTimeout(30_000);
+        factory.setReadTimeout(60_000);
 
         this.restTemplate = new RestTemplate(factory);
     }
@@ -122,6 +130,8 @@ public class RagChatServiceImpl implements RagChatService {
 
             requestBody.put("sessionId", chatSession.getId());
 
+            requestBody.put("history", buildHistoryPayload(chatSession.getId()));
+
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
             ResponseEntity<Map> response =
@@ -174,5 +184,45 @@ public class RagChatServiceImpl implements RagChatService {
         this.chatHistoryRepository.saveHistory(history);
 
         return new ChatResponseDTO(aiAnswer, chatSession.getId());
+    }
+
+    /**
+     * Lấy các lượt hỏi-đáp gần nhất của phiên chat để gửi kèm làm ngữ cảnh
+     * hội thoại cho AI server — nếu không có bước này, AI server coi mỗi câu
+     * hỏi là độc lập và không biết "2 căn đó" trong câu hỏi tiếp theo là gì.
+     */
+    private List<Map<String, Object>> buildHistoryPayload(Integer sessionId) {
+        List<Map<String, Object>> historyPayload = new ArrayList<>();
+
+        if (sessionId == null) {
+            return historyPayload;
+        }
+
+        List<ChatHistory> pastTurns = this.chatHistoryRepository.getHistoryBySessionId(sessionId);
+
+        int fromIndex = Math.max(0, pastTurns.size() - MAX_HISTORY_TURNS);
+
+        for (ChatHistory turn : pastTurns.subList(fromIndex, pastTurns.size())) {
+            Map<String, Object> turnPayload = new HashMap<>();
+
+            turnPayload.put("question", turn.getQuestion());
+            turnPayload.put("answer", turn.getAnswer());
+
+            List<Object> sources = List.of();
+
+            try {
+                if (turn.getSourceRefs() != null && !turn.getSourceRefs().isBlank()) {
+                    sources = this.objectMapper.readValue(turn.getSourceRefs(), List.class);
+                }
+            } catch (Exception e) {
+                logger.warn("Không parse được sourceRefs cũ của chat_history id={}", turn.getId());
+            }
+
+            turnPayload.put("sources", sources);
+
+            historyPayload.add(turnPayload);
+        }
+
+        return historyPayload;
     }
 }

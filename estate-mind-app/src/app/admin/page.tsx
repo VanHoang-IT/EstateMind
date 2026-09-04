@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import { adminPropertyService } from "@/services/adminPropertyService";
 
 import { ModerationStatus, Property } from "@/types/property";
 
 import PropertyModerationTable from "@/components/admin/PropertyModerationTable";
+
+const PAGE_SIZE = 8;
 
 interface LoadedState {
   key: string;
@@ -25,29 +27,54 @@ const tabs: {
   value: ModerationStatus | "";
 }[] = [
   {
-    label: "All",
+    label: "Tất cả",
 
     value: "",
   },
 
   {
-    label: "Pending",
+    label: "Chờ duyệt",
 
     value: "PENDING",
   },
 
   {
-    label: "Approved",
+    label: "Đã duyệt",
 
     value: "APPROVED",
   },
 
   {
-    label: "Rejected",
+    label: "Đã từ chối",
 
     value: "REJECTED",
   },
 ];
+
+function buildPageList(current: number, totalPages: number): (number | "…")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set<number>([1, totalPages, current]);
+
+  if (current - 1 >= 1) pages.add(current - 1);
+  if (current + 1 <= totalPages) pages.add(current + 1);
+
+  const sorted = Array.from(pages).sort((a, b) => a - b);
+
+  const result: (number | "…")[] = [];
+
+  sorted.forEach((page, index) => {
+    if (index > 0 && page - sorted[index - 1] > 1) {
+      result.push("…");
+    }
+
+    result.push(page);
+  });
+
+  return result;
+}
 
 export default function AdminPropertiesPage() {
   const [moderationStatus, setModerationStatus] = useState<
@@ -58,10 +85,12 @@ export default function AdminPropertiesPage() {
 
   const [submittedSearch, setSubmittedSearch] = useState("");
 
-  const requestKey = useMemo(
-    () => `${moderationStatus}|${submittedSearch}`,
+  const [page, setPage] = useState(1);
 
-    [moderationStatus, submittedSearch],
+  const requestKey = useMemo(
+    () => `${moderationStatus}|${submittedSearch}|${page}`,
+
+    [moderationStatus, submittedSearch, page],
   );
 
   const [state, setState] = useState<LoadedState | null>(null);
@@ -75,9 +104,9 @@ export default function AdminPropertiesPage() {
 
         search: submittedSearch || undefined,
 
-        page: 1,
+        page,
 
-        size: 50,
+        size: PAGE_SIZE,
       })
 
       .then((response) => {
@@ -109,20 +138,42 @@ export default function AdminPropertiesPage() {
           total: 0,
 
           error:
-            error instanceof Error ? error.message : "Unable to load listings.",
+            error instanceof Error
+              ? error.message
+              : "Không thể tải danh sách tin đăng.",
         });
       });
 
     return () => {
       ignore = true;
     };
-  }, [moderationStatus, submittedSearch, requestKey]);
+  }, [moderationStatus, submittedSearch, page, requestKey]);
 
   const loading = state?.key !== requestKey;
 
   const properties = loading ? [] : (state?.properties ?? []);
 
   const total = loading ? 0 : (state?.total ?? 0);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  function changeTab(value: ModerationStatus | "") {
+    setModerationStatus(value);
+    setPage(1);
+  }
+
+  function submitSearch() {
+    setSubmittedSearch(search.trim());
+    setPage(1);
+  }
+
+  function goToPage(target: number) {
+    const clamped = Math.min(Math.max(target, 1), totalPages);
+
+    if (clamped !== page) {
+      setPage(clamped);
+    }
+  }
 
   return (
     <div
@@ -145,7 +196,7 @@ export default function AdminPropertiesPage() {
             text-[#202523]
           "
         >
-          Property Moderation
+          Kiểm duyệt tin đăng
         </h1>
 
         <p
@@ -155,7 +206,8 @@ export default function AdminPropertiesPage() {
             text-[#68736d]
           "
         >
-          Review seller submissions and control which listings are published.
+          Xem xét các tin đăng do người bán gửi và quyết định tin nào được phép
+          công khai.
         </p>
       </div>
 
@@ -187,7 +239,7 @@ export default function AdminPropertiesPage() {
             <button
               key={tab.label}
               type="button"
-              onClick={() => setModerationStatus(tab.value)}
+              onClick={() => changeTab(tab.value)}
               className={`
                   rounded-lg
                   px-4
@@ -212,7 +264,7 @@ export default function AdminPropertiesPage() {
           onSubmit={(event) => {
             event.preventDefault();
 
-            setSubmittedSearch(search.trim());
+            submitSearch();
           }}
           className="
             relative
@@ -235,7 +287,7 @@ export default function AdminPropertiesPage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search property..."
+            placeholder="Tìm kiếm tin đăng..."
             className="
               h-10
               w-full
@@ -266,10 +318,8 @@ export default function AdminPropertiesPage() {
           "
         >
           {loading
-            ? "Loading listings..."
-            : `${total.toLocaleString(
-                "en-US",
-              )} listing${total === 1 ? "" : "s"}`}
+            ? "Đang tải danh sách tin đăng..."
+            : `${total.toLocaleString("vi-VN")} tin đăng`}
         </p>
       </div>
 
@@ -292,6 +342,134 @@ export default function AdminPropertiesPage() {
       )}
 
       {!loading && <PropertyModerationTable properties={properties} />}
+
+      {!loading && !state?.error && total > 0 && totalPages > 1 && (
+        <div
+          className="
+            mt-6
+            flex
+            flex-col
+            items-center
+            justify-between
+            gap-3
+
+            sm:flex-row
+          "
+        >
+          <p
+            className="
+              text-sm
+              text-[#68736d]
+            "
+          >
+            Trang {page} / {totalPages}
+          </p>
+
+          <div
+            className="
+              flex
+              items-center
+              gap-1.5
+            "
+          >
+            <button
+              type="button"
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1}
+              aria-label="Trang trước"
+              className="
+                inline-flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-[#d7dfdb]
+                text-[#4c5851]
+                transition
+                hover:border-brand
+                hover:text-brand
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+                disabled:hover:border-[#d7dfdb]
+                disabled:hover:text-[#4c5851]
+              "
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {buildPageList(page, totalPages).map((item, index) =>
+              item === "…" ? (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="
+                    px-1.5
+                    text-sm
+                    text-[#9aa39c]
+                  "
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => goToPage(item)}
+                  aria-current={item === page ? "page" : undefined}
+                  className={`
+                    inline-flex
+                    h-9
+                    min-w-[36px]
+                    items-center
+                    justify-center
+                    rounded-lg
+                    px-2
+                    text-sm
+                    font-semibold
+                    transition
+
+                    ${
+                      item === page
+                        ? "bg-brand text-white"
+                        : "border border-[#d7dfdb] text-[#4c5851] hover:border-brand hover:text-brand"
+                    }
+                  `}
+                >
+                  {item}
+                </button>
+              ),
+            )}
+
+            <button
+              type="button"
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages}
+              aria-label="Trang sau"
+              className="
+                inline-flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-[#d7dfdb]
+                text-[#4c5851]
+                transition
+                hover:border-brand
+                hover:text-brand
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+                disabled:hover:border-[#d7dfdb]
+                disabled:hover:text-[#4c5851]
+              "
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

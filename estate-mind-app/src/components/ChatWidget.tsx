@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, Fragment } from "react";
 import { chatService } from "@/services/chatService";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -42,6 +43,7 @@ function renderMarkdown(text: string) {
 }
 
 export default function ChatWidget() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -87,6 +89,10 @@ export default function ChatWidget() {
     } finally {
       setSending(false);
     }
+  }
+
+  if (user?.userRole === "ROLE_ADMIN" || user?.userRole === "ROLE_SELLER") {
+    return null;
   }
 
   return (

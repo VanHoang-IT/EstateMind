@@ -1,86 +1,173 @@
-/EstateMind/target/
+# =========================================================
+# 🔐 SECRETS / ENVIRONMENT
+# =========================================================
+.env
+.env.*
+!.env.example
+
+*.env
+!.env.example
+
+
+# =========================================================
+# 🤖 CLAUDE / AI TOOLS
+# =========================================================
+.claude/
+
+
+# =========================================================
+# 🧑‍💻 IDE / EDITOR
+# =========================================================
+.idea/
+.vscode/
+*.iml
+
+# NetBeans
+nbproject/private/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+
+# =========================================================
+# 🖥️ OS
+# =========================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+
+# =========================================================
+# 🐍 PYTHON
+# =========================================================
+__pycache__/
+**/__pycache__/
+
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
 
 pipeline/.venv/
 pipeline/venv/
-pipeline/__pycache__/
-pipeline/**/*.pyc
 
-pipeline/.env
+# Python testing / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-pipeline/chroma_db/
-
-pipeline/data/*.csv
-
-estate-mind-app/.venv/
+# Jupyter
+.ipynb_checkpoints/
 
 
-# ==== BÍ MẬT — quan trọng nhất ====
-.env
-.env.local
-*.env
-
-# ==== Python ====
-pipeline/.venv/
-__pycache__/
-*.pyc
-
-# ==== Dữ liệu crawl & sinh ra ====
-pipeline/data/*.csv
-pipeline/data/blocked_pages/
-pipeline/chroma_db/
-pipeline/chrome_profile/
-pipeline/training/valuation/models/*.joblib
-
-# ==== Frontend ====
-node_modules/
-.next/
-out/
-
-# ==== Java / Maven ====
+# =========================================================
+# ☕ JAVA / SPRING BOOT / MAVEN
+# =========================================================
 target/
+**/target/
+
+*.class
+*.jar
 *.war
 
-# ==== IDE & OS ====
-.idea/
-.vscode/
-nbproject/private/
-Thumbs.db
-.DS_Store
+# Maven
+.mvn/timing.properties
 
-# Trọng số mô hình — quá lớn cho Git
+
+# =========================================================
+# 📦 NODE.JS / NEXT.JS
+# =========================================================
+node_modules/
+**/node_modules/
+
+.next/
+**/.next/
+
+out/
+dist/
+
+# npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# React / Next cache
+.npm/
+.turbo/
+
+
+# =========================================================
+# 🗄️ DATABASE / VECTOR DATABASE
+# =========================================================
+
+# ChromaDB
+pipeline/chroma_db/
+
+# Local database files
+*.sqlite
+*.sqlite3
+*.db
+
+
+# =========================================================
+# 🕷️ CRAWLER DATA / GENERATED DATA
+# =========================================================
+
+# Crawled CSV
+pipeline/data/*.csv
+
+# Blocked pages
+pipeline/data/blocked_pages/
+
+# Selenium / Chrome profile
+pipeline/chrome_profile/
+
+# Other generated crawler data
+pipeline/data/output/
+pipeline/data/results/
+
+
+# =========================================================
+# 🤖 MACHINE LEARNING MODELS
+# =========================================================
+
+# Trained models
 pipeline/models/
 pipeline/training/ner/models/
 pipeline/training/reader/models/
 pipeline/training/retriever/models/
 pipeline/training/valuation/models/
+
+# Model files
+*.joblib
 *.safetensors
 *.bin
 *.pt
-*.joblib
+*.pth
+*.onnx
+*.h5
+*.pkl
 
-# Bí mật
-.env
-.env.local
 
-# Python
-pipeline/.venv/
-__pycache__/
-*.pyc
+# =========================================================
+# 📊 LOGS / TEMP FILES
+# =========================================================
+*.log
+logs/
+tmp/
+temp/
 
-# Dữ liệu sinh ra
-pipeline/chroma_db/
-pipeline/chrome_profile/
-pipeline/data/blocked_pages/
 
-# Frontend
-node_modules/
-.next/
-
-# Java
-target/
-*.war
-
-# IDE
-.idea/
-.vscode/
-nbproject/private/
+# =========================================================
+# 🔧 BUILD / CACHE
+# =========================================================
+.cache/
+coverage/
+*.tmp
+*.temp

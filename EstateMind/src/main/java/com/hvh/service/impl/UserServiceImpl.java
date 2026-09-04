@@ -15,6 +15,7 @@ import com.hvh.dto.UpdateProfileDTO;
 import com.hvh.dto.UpdateVerificationProfileDTO;
 import com.hvh.dto.UserProfileResponseDTO;
 import com.hvh.dto.VerificationProfileResponseDTO;
+import com.hvh.dto.VerificationQueueDTO;
 import com.hvh.pojo.Company;
 import com.hvh.pojo.CustomerProfile;
 import com.hvh.pojo.SellerProfile;
@@ -22,6 +23,7 @@ import com.hvh.pojo.Users;
 import com.hvh.repository.UserRepository;
 import com.hvh.service.CustomerProfileService;
 import com.hvh.service.SellerProfileService;
+import com.hvh.service.CompanyService;
 import com.hvh.service.UserService;
 import com.hvh.utils.JwtUtils;
 import java.io.IOException;
@@ -62,6 +64,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private SellerProfileService sellerProfileService;
+
+    @Autowired
+    private CompanyService companyService;
 
     @Autowired
     private Cloudinary cloudinary;
@@ -539,5 +544,66 @@ public class UserServiceImpl implements UserService {
         this.userRepo.updateUser(user);
 
         return toUserProfileDTO(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VerificationQueueDTO> getVerificationQueue(String role) {
+
+        List<VerificationQueueDTO> result = new java.util.ArrayList<>();
+
+        if (role == null || "ROLE_CUSTOMER".equals(role)) {
+            for (CustomerProfile profile : this.customerProfileService.getPendingVerification()) {
+                result.add(VerificationQueueDTO.fromCustomer(profile));
+            }
+        }
+
+        if (role == null || "ROLE_SELLER".equals(role)) {
+            for (SellerProfile profile : this.sellerProfileService.getPendingVerification()) {
+                result.add(VerificationQueueDTO.fromSeller(profile));
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public void rejectVerification(int userId) {
+
+        Users user = this.getUserById(userId);
+
+        if ("ROLE_CUSTOMER".equals(user.getUserRole())) {
+
+            CustomerProfile profile = this.customerProfileService.getByUserId(user.getId());
+
+            if (profile == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Tài khoản chưa có customer_profile");
+            }
+
+            profile.setIdentityVerified(false);
+            profile.setUpdatedAt(new Date());
+
+            this.customerProfileService.updateProfile(profile);
+            return;
+        }
+
+        if ("ROLE_SELLER".equals(user.getUserRole())) {
+
+            SellerProfile profile = this.sellerProfileService.getByUserId(user.getId());
+
+            if (profile == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Tài khoản chưa có seller_profile");
+            }
+
+            profile.setIsVerified(false);
+            profile.setVerifiedAt(null);
+            profile.setUpdatedAt(new Date());
+
+            this.sellerProfileService.updateProfile(profile);
+            return;
+        }
     }
 }

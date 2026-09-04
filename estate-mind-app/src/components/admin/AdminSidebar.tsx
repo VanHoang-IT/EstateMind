@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { Building2, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
+import { Building2, LogOut, ShieldCheck, UserCheck } from "lucide-react";
 
 import { usePathname, useRouter } from "next/navigation";
 
@@ -10,19 +10,19 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const items = [
   {
-    href: "/admin",
-
-    label: "Tổng quan",
-
-    icon: LayoutDashboard,
-  },
-
-  {
     href: "/admin/properties",
 
     label: "Kiểm duyệt tin đăng",
 
     icon: Building2,
+  },
+
+  {
+    href: "/admin/verification",
+
+    label: "Xác minh tài khoản",
+
+    icon: UserCheck,
   },
 ];
 

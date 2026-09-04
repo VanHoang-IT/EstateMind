@@ -10,6 +10,7 @@ import com.hvh.repository.SellerProfileRepository;
 import com.hvh.service.SellerProfileService;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,5 +66,11 @@ public class SellerProfileServiceImpl implements SellerProfileService {
     @Transactional
     public SellerProfile updateProfile(SellerProfile profile) {
         return this.sellerProfileRepo.updateProfile(profile);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<SellerProfile> getPendingVerification() {
+        return this.sellerProfileRepo.getPendingVerification();
     }
 }

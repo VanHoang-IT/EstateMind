@@ -648,7 +648,7 @@ export default function AdminPropertyDetailPage() {
                   "
                 >
                   <XCircle size={18} />
-                  Reject
+                  Từ chối
                 </button>
               )}
             </div>
@@ -1529,7 +1529,7 @@ export default function AdminPropertyDetailPage() {
                   disabled:opacity-50
                 "
               >
-                Cancel
+                Hủy
               </button>
 
               <button

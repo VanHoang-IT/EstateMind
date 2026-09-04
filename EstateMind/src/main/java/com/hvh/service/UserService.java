@@ -7,6 +7,7 @@ import com.hvh.dto.UpdateProfileDTO;
 import com.hvh.dto.UpdateVerificationProfileDTO;
 import com.hvh.dto.UserProfileResponseDTO;
 import com.hvh.dto.VerificationProfileResponseDTO;
+import com.hvh.dto.VerificationQueueDTO;
 import com.hvh.pojo.Users;
 import java.util.List;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,28 +23,32 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public interface UserService extends UserDetailsService {
     Users getUserByUsername(String username);
-
+ 
     Users getUserById(int id);
-
+ 
     UserProfileResponseDTO register(RegisterRequestDTO request, MultipartFile avatar);
-
+ 
     LoginResponseDTO login(LoginRequestDTO request);
-
+ 
     UserProfileResponseDTO getUserProfile(String username);
-
+ 
     VerificationProfileResponseDTO<?> getVerificationProfile(String username);
-
+ 
     VerificationProfileResponseDTO<?> updateVerificationProfile(
             String username, UpdateVerificationProfileDTO request);
-
+ 
     void approveVerification(int userId);
-
+ 
+    void rejectVerification(int userId);
+ 
+    List<VerificationQueueDTO> getVerificationQueue(String role);
+ 
     boolean authenticate(String username, String password);
-
+ 
     List<Users> getUsers(Integer page);
-
+ 
     Users updateRole(int id, String role);
-
+ 
     UserProfileResponseDTO updateProfile(
             String username, UpdateProfileDTO request, MultipartFile avatar);
 }

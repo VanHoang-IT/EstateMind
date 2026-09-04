@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { authFetch, throwIfNotOk } from "@/lib/api";
+import { companyService } from "@/services/companyService";
 
 interface CustomerVerificationProfile {
   id: number;
@@ -335,9 +336,12 @@ function CustomerVerificationSection({
 
       await onSaved();
       setEditing(false);
-    } catch {
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "";
       setSaveError(
-        "Không thể lưu hồ sơ xác minh. Vui lòng kiểm tra thông tin và thử lại.",
+        detail
+          ? `Không thể lưu hồ sơ xác minh: ${detail}`
+          : "Không thể lưu hồ sơ xác minh. Vui lòng kiểm tra thông tin và thử lại.",
       );
     } finally {
       setSaving(false);
@@ -478,45 +482,105 @@ function SellerVerificationSection({
 }) {
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState(profile.bio ?? "");
-  const [companyIdInput, setCompanyIdInput] = useState(
-    typeof profile.companyId === "number"
-      ? String(profile.companyId)
-      : profile.companyId && typeof profile.companyId === "object"
-        ? String(profile.companyId.id ?? "")
-        : "",
-  );
+
+  const [taxCode, setTaxCode] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [isLookingUpTax, setIsLookingUpTax] = useState(false);
+  const [taxLookupError, setTaxLookupError] = useState<string | null>(null);
+  const [taxLookupWarning, setTaxLookupWarning] = useState<string | null>(null);
+
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const TAX_CODE_REGEX = /^\d{10}(-\d{3})?$/;
+  const ACTIVE_STATUS_KEYWORD = "đang hoạt động";
+
+  async function runTaxLookup(code: string) {
+    setIsLookingUpTax(true);
+    setTaxLookupError(null);
+    setTaxLookupWarning(null);
+
+    try {
+      const result = await companyService.lookupByTaxCode(code);
+
+      if (result.code !== "00" || !result.data) {
+        setTaxLookupError(
+          result.desc || "Không tìm thấy công ty ứng với mã số thuế này",
+        );
+        return;
+      }
+
+      setCompanyName(result.data.name || "");
+      setCompanyAddress(result.data.address || "");
+
+      if (
+        result.data.status &&
+        !result.data.status.includes(ACTIVE_STATUS_KEYWORD)
+      ) {
+        setTaxLookupWarning(
+          `Lưu ý: trạng thái thuế hiện tại là "${result.data.status}", không phải đang hoạt động`,
+        );
+      }
+    } catch {
+      setTaxLookupError(
+        "Không thể tra cứu mã số thuế lúc này, vui lòng nhập thủ công",
+      );
+    } finally {
+      setIsLookingUpTax(false);
+    }
+  }
+
+  function handleTaxCodeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setTaxCode(value);
+    setTaxLookupError(null);
+    setTaxLookupWarning(null);
+
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    const trimmed = value.trim();
+    if (!TAX_CODE_REGEX.test(trimmed)) {
+      return;
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      runTaxLookup(trimmed);
+    }, 600);
+  }
 
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
 
-    const trimmedCompanyId = companyIdInput.trim();
-    const parsedCompanyId = trimmedCompanyId
-      ? Number(trimmedCompanyId)
-      : undefined;
-
-    if (
-      trimmedCompanyId &&
-      (!Number.isInteger(parsedCompanyId) || (parsedCompanyId as number) <= 0)
-    ) {
-      setSaveError("Mã công ty phải là số nguyên dương.");
-      setSaving(false);
-      return;
-    }
-
     try {
+      let companyId: number | undefined;
+
+      if (companyName.trim()) {
+        const company = await companyService.createCompany({
+          name: companyName.trim(),
+          taxCode: taxCode.trim() || undefined,
+          address: companyAddress.trim() || undefined,
+        });
+        companyId = company.id;
+      }
+
       await updateVerificationProfile({
         bio: bio.trim(),
-        ...(parsedCompanyId ? { companyId: parsedCompanyId } : {}),
+        ...(companyId ? { companyId } : {}),
       });
 
       await onSaved();
       setEditing(false);
-    } catch {
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "";
       setSaveError(
-        "Không thể lưu hồ sơ xác minh. Vui lòng kiểm tra thông tin và thử lại.",
+        detail
+          ? `Không thể lưu hồ sơ xác minh: ${detail}`
+          : "Không thể lưu hồ sơ xác minh. Vui lòng kiểm tra thông tin và thử lại.",
       );
     } finally {
       setSaving(false);
@@ -541,7 +605,12 @@ function SellerVerificationSection({
             type="button"
             onClick={() => {
               setBio(profile.bio ?? "");
+              setTaxCode("");
+              setCompanyName("");
+              setCompanyAddress("");
               setSaveError(null);
+              setTaxLookupError(null);
+              setTaxLookupWarning(null);
               setEditing(true);
             }}
             className="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
@@ -566,18 +635,64 @@ function SellerVerificationSection({
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-              Mã công ty (không bắt buộc)
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={companyIdInput}
-              onChange={(e) => setCompanyIdInput(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="Nhập mã công ty..."
-            />
+          <div className="rounded-md border border-dashed border-gray-300 p-4 dark:border-slate-600">
+            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-slate-300">
+              Liên kết công ty{" "}
+              {getCompanyLabel(profile) !== "Chưa liên kết" &&
+                "(sẽ tạo công ty mới nếu điền lại)"}
+            </p>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                Mã số thuế
+              </label>
+              <input
+                type="text"
+                value={taxCode}
+                onChange={handleTaxCodeChange}
+                placeholder="Nhập mã số thuế 10 hoặc 13 số để tự động điền thông tin"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              />
+              {isLookingUpTax && (
+                <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+                  Đang tra cứu thông tin công ty...
+                </p>
+              )}
+              {taxLookupError && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {taxLookupError}
+                </p>
+              )}
+              {taxLookupWarning && (
+                <p className="mt-1 text-sm text-amber-600 dark:text-amber-400">
+                  {taxLookupWarning}
+                </p>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                Tên công ty
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                Địa chỉ
+              </label>
+              <input
+                type="text"
+                value={companyAddress}
+                onChange={(e) => setCompanyAddress(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              />
+            </div>
           </div>
 
           {saveError && (

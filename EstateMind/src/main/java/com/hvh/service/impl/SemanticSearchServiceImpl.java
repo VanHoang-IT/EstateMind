@@ -30,7 +30,11 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
     private static final Logger logger =
             LoggerFactory.getLogger(SemanticSearchServiceImpl.class);
 
-    private static final String PYTHON_SEARCH_URL = "http://localhost:8000/api/search";
+    private static final String PYTHON_SEARCH_URL =
+            (System.getenv("AI_SERVER_URL") != null
+                            ? System.getenv("AI_SERVER_URL")
+                            : "http://localhost:8000")
+                    + "/api/search";
 
     private final RestTemplate restTemplate;
 

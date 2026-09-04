@@ -23,6 +23,7 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author acer
@@ -224,6 +225,7 @@ public class Company implements Serializable {
     }
 
     @XmlTransient
+    @JsonIgnore
     public Set<SellerProfile> getSellerProfileSet() {
         return sellerProfileSet;
     }

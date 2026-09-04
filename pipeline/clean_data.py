@@ -2,12 +2,12 @@ import pandas as pd
 import re
 
 MIN_AREA_M2 = 10.0
-MAX_AREA_M2 = 50_000.0
+MAX_AREA_M2 = 2_000.0
 
 # Ngưỡng theo loại giao dịch (đơn vị: đồng)
 SALE_MIN_VND = 100_000_000
 SALE_MAX_VND = 200_000_000_000
-RENT_MIN_VND = 1_000_000
+RENT_MIN_VND = 300_000
 RENT_MAX_VND = 500_000_000
 
 _NUMBER_TOKEN = r"\d[\d.,]*"
@@ -17,11 +17,12 @@ _AREA_RE = re.compile(
     re.IGNORECASE,
 )
 _TY_RE = re.compile(rf"({_NUMBER_TOKEN})\s*(?:tỷ|tỉ)", re.IGNORECASE)
-_TRIEU_RE = re.compile(rf"({_NUMBER_TOKEN})\s*triệu", re.IGNORECASE)
+_TRIEU_RE = re.compile(rf"({_NUMBER_TOKEN})\s*(?:triệu|trđ\b|tr\b)", re.IGNORECASE)
+_NGHIN_RE = re.compile(rf"({_NUMBER_TOKEN})\s*(?:nghìn|ngàn|k)\b", re.IGNORECASE)
 _UNIT_PRICE_RE = re.compile(
     rf"({_NUMBER_TOKEN})\s*(?:tr|triệu)\s*/\s*(?:m2|m²)", re.IGNORECASE
 )
-_BEDROOM_RE = re.compile(r"(\d+)\s*(?:pn|phòng ngủ|ngủ|n\+|phòng)", re.IGNORECASE)
+_BEDROOM_RE = re.compile(r"(\d+)\s*(?:pn\b|phòng ngủ|ngủ\b)", re.IGNORECASE)
 _NEGOTIABLE_RE = re.compile(r"thỏa thuận|thoả thuận", re.IGNORECASE)
 
 HCM_KEYWORDS = re.compile(
@@ -101,6 +102,10 @@ def parse_and_calculate(row):
             trieu = _search_number(_TRIEU_RE, price_raw, title)
             if trieu is not None:
                 price_vnd = trieu * 1_000_000
+            else:
+                nghin = _search_number(_NGHIN_RE, price_raw, title)
+                if nghin is not None:
+                    price_vnd = nghin * 1_000
         else:
             # Tin bán: ưu tiên tỷ, rồi triệu
             ty = _search_number(_TY_RE, price_raw, title)

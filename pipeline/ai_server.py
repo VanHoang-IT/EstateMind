@@ -70,9 +70,16 @@ app = FastAPI(
 )
 
 
+class ChatHistoryTurn(BaseModel):
+    question: str
+    answer: str
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
     sessionId: int | None = None
+    history: list[ChatHistoryTurn] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):
@@ -165,6 +172,44 @@ def build_legal_context(documents: list[Any]) -> str:
         )
 
     return "\n".join(lines)
+
+
+def build_history_property_context(
+    history: list[ChatHistoryTurn],
+) -> tuple[str, list[dict[str, Any]]]:
+    """Gom các bất động sản đã từng nhắc tới trong phiên chat (từ các lượt
+    trước) để AI vẫn "nhớ" và trả lời đúng khi người dùng hỏi tiếp kiểu
+    "gửi link 2 căn đó" — lúc này câu hỏi mới không đủ để vector search tìm
+    lại đúng các căn đã tư vấn trước đó."""
+    seen_property_ids: set[Any] = set()
+    historical_sources: list[dict[str, Any]] = []
+
+    for turn in history:
+        for source in turn.sources:
+            if source.get("type") != "property":
+                continue
+
+            property_id = source.get("propertyId")
+
+            if property_id is None or property_id in seen_property_ids:
+                continue
+
+            seen_property_ids.add(property_id)
+            historical_sources.append(source)
+
+    lines: list[str] = []
+
+    for source in historical_sources:
+        lines.append(
+            f"- [Mã: {source.get('propertyId', 'N/A')}, "
+            f"Giá: {source.get('price', 'N/A')} VNĐ, "
+            f"Diện tích: {source.get('area', 'N/A')} m2, "
+            f"Khu vực: {source.get('district', 'N/A')}, "
+            f"Phòng ngủ: {source.get('bedrooms', 'N/A')}, "
+            f"URL: {source.get('sourceUrl', '')}]"
+        )
+
+    return "\n".join(lines), historical_sources
 
 
 def build_property_context(documents: list[Any]) -> str:
@@ -286,7 +331,17 @@ def build_sources(
 def build_system_instruction(
     property_context: str,
     legal_context: str,
+    history_property_context: str = "",
 ) -> str:
+    history_section = (
+        "\n\n--- BẤT ĐỘNG SẢN ĐÃ NHẮC TRONG CUỘC TRÒ CHUYỆN NÀY ---\n"
+        f"{history_property_context}\n"
+        "Khi người dùng hỏi tiếp về những căn này (vd: xin link, hỏi thêm "
+        "chi tiết, so sánh...), hãy dùng đúng thông tin ở mục này."
+        if history_property_context
+        else ""
+    )
+
     return (
         "Bạn là trợ lý AI của sàn giao dịch bất động sản EstateMind. "
         "Bạn có hai nhiệm vụ: giới thiệu bất động sản và hỗ trợ tra cứu "
@@ -294,7 +349,8 @@ def build_system_instruction(
 
         "QUY TẮC BẮT BUỘC:\n"
         "1. Chỉ được giới thiệu bất động sản xuất hiện trong "
-        "'KHO DỮ LIỆU NHÀ ĐẤT HIỆN CÓ'.\n"
+        "'KHO DỮ LIỆU NHÀ ĐẤT HIỆN CÓ' hoặc mục bất động sản đã nhắc ở "
+        "dưới (nếu có).\n"
         "2. Không tự tạo tên dự án, địa chỉ, giá, diện tích hoặc thông tin "
         "bất động sản không có trong dữ liệu.\n"
         "3. Nếu dữ liệu không có căn đáp ứng đúng ngân sách hoặc khu vực, "
@@ -314,6 +370,7 @@ def build_system_instruction(
 
         "--- KHO DỮ LIỆU LUẬT PHÁP ---\n"
         f"{legal_context or '(Không tìm thấy nội dung pháp lý liên quan)'}"
+        f"{history_section}"
     )
 
 
@@ -390,21 +447,34 @@ def chat_with_ai(request: ChatRequest) -> ChatResponse:
 
         property_context = build_property_context(property_documents)
         legal_context = build_legal_context(legal_documents)
+        history_property_context, historical_property_sources = (
+            build_history_property_context(request.history)
+        )
 
         system_instruction = build_system_instruction(
             property_context,
             legal_context,
+            history_property_context,
         )
 
-        messages = [
-            ("system", system_instruction),
-            ("human", question),
-        ]
+        conversation_turns: list[tuple[str, str]] = []
+
+        for turn in request.history:
+            conversation_turns.append(("human", turn.question))
+            conversation_turns.append(("ai", turn.answer))
+
+        messages = (
+            [("system", system_instruction)]
+            + conversation_turns
+            + [("human", question)]
+        )
 
         logger.info(
-            "Gọi Gemini với %s property documents và %s legal documents.",
+            "Gọi Gemini với %s property documents, %s legal documents, "
+            "%s lượt hội thoại trước đó.",
             len(property_documents),
             len(legal_documents),
+            len(request.history),
         )
 
         response = llm.invoke(messages)
@@ -419,6 +489,16 @@ def chat_with_ai(request: ChatRequest) -> ChatResponse:
             property_documents,
             legal_documents,
         )
+
+        existing_property_ids = {
+            source.get("propertyId")
+            for source in sources
+            if source.get("type") == "property"
+        }
+
+        for historical_source in historical_property_sources:
+            if historical_source.get("propertyId") not in existing_property_ids:
+                sources.append(historical_source)
 
         logger.info(
             "Trả lời thành công, số nguồn=%s.",

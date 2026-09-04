@@ -88,7 +88,7 @@ export default function ValuationSummary({
         </div>
 
         <div>
-          <p className="mb-1 text-xs text-gray-400">Điểm Mind</p>
+          <p className="mb-1 text-xs text-gray-400">Mind Score</p>
 
           <p className="text-xl font-bold text-gray-800">{mindScore}/100</p>
         </div>

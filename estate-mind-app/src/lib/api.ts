@@ -1,7 +1,12 @@
 // Đọc từ biến môi trường, có fallback về giá trị cũ đang hardcode trong repo
 // (bao gồm luôn context path "/EstateMind" của app Spring Boot deploy dạng WAR).
+// Phía server (SSR/route handlers) ưu tiên API_INTERNAL_URL vì trong Docker,
+// "localhost" ở NEXT_PUBLIC_API_URL trỏ vào chính container frontend chứ
+// không phải backend — chỉ trình duyệt (client) mới gọi được localhost đó.
 export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/EstateMind/api";
+  (typeof window === "undefined" && process.env.API_INTERNAL_URL) ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8080/EstateMind/api";
 
 const TOKEN_KEY = "estatemind_token";
 

@@ -46,7 +46,7 @@ public class ChatHistoryRepositoryImpl implements ChatHistoryRepository {
         CriteriaQuery<ChatHistory> q = b.createQuery(ChatHistory.class);
         Root<ChatHistory> root = q.from(ChatHistory.class);
 
-        q.select(root).where(b.equal(root.get("sessionId"), sessionId));
+        q.select(root).where(b.equal(root.get("sessionId").get("id"), sessionId));
         q.orderBy(b.asc(root.get("createdDate")));
 
         Query<ChatHistory> query = session.createQuery(q);

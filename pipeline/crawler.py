@@ -12,30 +12,30 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-# =========================
+# =========================.
 # DANH MỤC CRAWL
 # (category_path, category_id, property_type_id, listing_type)
 # property_type_id: 1 = BÁN, 2 = THUÊ
 # =========================
 CATEGORIES = [
     # ---- BÁN (property_type_id = 1) ----
-    ("ban-can-ho-chung-cu-tp-hcm",               1,  1, "BAN"),
-    ("ban-can-ho-chung-cu-mini-tp-hcm",          2,  1, "BAN"),
-    ("ban-nha-rieng-tp-hcm",                     3,  1, "BAN"),
-    ("ban-nha-biet-thu-lien-ke-tp-hcm",          4,  1, "BAN"),
-    ("ban-nha-mat-pho-tp-hcm",                   5,  1, "BAN"),
-    ("ban-shophouse-nha-pho-thuong-mai-tp-hcm",  6,  1, "BAN"),
-    ("ban-dat-nen-du-an-tp-hcm",                 7,  1, "BAN"),
-    ("ban-dat-tp-hcm",                           8,  1, "BAN"),
-    ("ban-trang-trai-khu-nghi-duong-tp-hcm",     9,  1, "BAN"),
-    ("ban-condotel-tp-hcm",                     10,  1, "BAN"),
-    ("ban-kho-nha-xuong-tp-hcm",                11,  1, "BAN"),
-    ("ban-loai-bat-dong-san-khac-tp-hcm",       12,  1, "BAN"),
+    # ("ban-can-ho-chung-cu-tp-hcm",               1,  1, "BAN"),
+    # ("ban-can-ho-chung-cu-mini-tp-hcm",          2,  1, "BAN"),
+    # ("ban-nha-rieng-tp-hcm",                     3,  1, "BAN"),
+    # ("ban-nha-biet-thu-lien-ke-tp-hcm",          4,  1, "BAN"),
+    # ("ban-nha-mat-pho-tp-hcm",                   5,  1, "BAN"),
+    # ("ban-shophouse-nha-pho-thuong-mai-tp-hcm",  6,  1, "BAN"),
+    # ("ban-dat-nen-du-an-tp-hcm",                 7,  1, "BAN"),
+    # ("ban-dat-tp-hcm",                           8,  1, "BAN"),
+    # ("ban-trang-trai-khu-nghi-duong-tp-hcm",     9,  1, "BAN"),
+    # ("ban-condotel-tp-hcm",                     10,  1, "BAN"),
+    # ("ban-kho-nha-xuong-tp-hcm",                11,  1, "BAN"),
+    # ("ban-loai-bat-dong-san-khac-tp-hcm",       12,  1, "BAN"),
 
     # ---- THUÊ (property_type_id = 2) ----
-    ("cho-thue-can-ho-chung-cu-tp-hcm",               13, 2, "THUE"),
-    ("cho-thue-can-ho-chung-cu-mini-tp-hcm",          14, 2, "THUE"),
-    ("cho-thue-nha-rieng-tp-hcm",                     15, 2, "THUE"),
+    # ("cho-thue-can-ho-chung-cu-tp-hcm",               13, 2, "THUE"),
+    # ("cho-thue-can-ho-chung-cu-mini-tp-hcm",          14, 2, "THUE"),
+    # ("cho-thue-nha-rieng-tp-hcm",                     15, 2, "THUE"),
     ("cho-thue-nha-biet-thu-lien-ke-tp-hcm",          16, 2, "THUE"),
     ("cho-thue-nha-mat-pho-tp-hcm",                   17, 2, "THUE"),
     ("cho-thue-shophouse-nha-pho-thuong-mai-tp-hcm",  18, 2, "THUE"),
@@ -46,8 +46,8 @@ CATEGORIES = [
     ("cho-thue-loai-bat-dong-san-khac-tp-hcm",        23, 2, "THUE"),
 ]
 
-PAGES_PER_CATEGORY = 15    
-
+PAGES_PER_CATEGORY = 10
+LISTING_TYPES_TO_CRAWL = ("BAN", "THUE")
 
 # =========================
 # INIT DRIVER
@@ -400,14 +400,17 @@ def main():
         try:
             crawled_urls = set(pd.read_csv(output_file)["url"].dropna())
             print(f"↩️ RESUME: đã có {len(crawled_urls)} tin, sẽ bỏ qua")
-        except Exception:
-            pass
+        except Exception as e:
+            print("⚠️ KHÔNG ĐỌC ĐƯỢC FILE RESUME:", e)
 
     print("🚀 START CRAWLER ĐA DANH MỤC (BÁN + THUÊ)")
 
     try:
-        for category_path, category_id, property_type_id, listing_type in CATEGORIES:
-            # Cờ dừng toàn bộ category khi gặp tin hết hạn
+        targets = [c for c in CATEGORIES if c[3] in LISTING_TYPES_TO_CRAWL]
+
+        print(f"📋 Sẽ crawl {len(targets)} danh mục: {LISTING_TYPES_TO_CRAWL}")
+
+        for category_path, category_id, property_type_id, listing_type in targets:
             stop_category = False
 
             print(
@@ -428,11 +431,17 @@ def main():
                     print("   ℹ️ Hết tin, sang danh mục khác.")
                     break
 
+                skipped = 0
+                new_count = 0
+
                 for entry in entries:
                     url = entry["url"]
 
                     if url in crawled_urls:
+                        skipped += 1
                         continue
+
+                    new_count += 1
 
                     try:
                         data, images, is_expired = crawl_detail(
@@ -441,8 +450,6 @@ def main():
                             entry["main_image"]
                         )
 
-                        # Gặp tin hết hạn -> dừng category hiện tại
-                        # và chuyển sang category tiếp theo.
                         if is_expired:
                             print(
                                 f"⛔ GẶP TIN HẾT HẠN -> DỪNG CATEGORY "
@@ -452,7 +459,6 @@ def main():
                             break
 
                         if data:
-                            # Gắn nhãn theo đúng danh mục URL đang crawl
                             data["category_id"] = category_id
                             data["property_type_id"] = property_type_id
                             data["listing_type"] = listing_type
@@ -470,8 +476,8 @@ def main():
                     except Exception as e:
                         print("❌ detail error:", e)
 
-                # Nếu đã gặp tin hết hạn thì thoát luôn vòng page
-                # để chuyển sang category kế tiếp.
+                print(f"   ↪️ Trang {page}: {new_count} tin mới | {skipped} tin đã có, bỏ qua")
+
                 if stop_category:
                     print(f"➡️ CHUYỂN SANG CATEGORY TIẾP THEO SAU category_id={category_id}")
                     break
