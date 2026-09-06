@@ -205,16 +205,19 @@ public class ApiAdminController {
     }
 
     @PatchMapping("/verifications/{userId}/approve")
-    public ResponseEntity<?> approveVerification(@PathVariable("userId") int userId) {
-        try {
-            this.userService.approveVerification(userId);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        }
+public ResponseEntity<?> approveVerification(@PathVariable("userId") int userId) {
+    try {
+        this.userService.approveVerification(userId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    } catch (org.springframework.web.server.ResponseStatusException e) {
+        return new ResponseEntity<>(
+                Map.of("message", e.getReason()), e.getStatusCode());
+    } catch (IllegalArgumentException e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    } catch (RuntimeException e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
+}
 
     @GetMapping("/properties/{id}")
     public ResponseEntity<?> getPropertyById(
@@ -358,19 +361,22 @@ public class ApiAdminController {
             );
         }
     }
-    
+
     @PatchMapping("/verifications/{userId}/reject")
     public ResponseEntity<?> rejectVerification(@PathVariable("userId") int userId) {
         try {
             this.userService.rejectVerification(userId);
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return new ResponseEntity<>(
+                    Map.of("message", e.getReason()), e.getStatusCode());
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
     }
- 
+
     @GetMapping(
             value = "/verifications",
             produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)

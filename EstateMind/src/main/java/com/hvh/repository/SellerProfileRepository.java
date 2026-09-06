@@ -12,10 +12,9 @@ import java.util.List;
  */
 public interface SellerProfileRepository {
     SellerProfile createProfile(SellerProfile profile);
-
     SellerProfile getByUserId(int userId);
-
     SellerProfile updateProfile(SellerProfile profile);
-    
+
     List<SellerProfile> getPendingVerification();
+    List<SellerProfile> getApprovedVerification();
 }

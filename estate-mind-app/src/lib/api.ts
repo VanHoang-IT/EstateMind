@@ -1,8 +1,3 @@
-// Đọc từ biến môi trường, có fallback về giá trị cũ đang hardcode trong repo
-// (bao gồm luôn context path "/EstateMind" của app Spring Boot deploy dạng WAR).
-// Phía server (SSR/route handlers) ưu tiên API_INTERNAL_URL vì trong Docker,
-// "localhost" ở NEXT_PUBLIC_API_URL trỏ vào chính container frontend chứ
-// không phải backend — chỉ trình duyệt (client) mới gọi được localhost đó.
 export const API_URL =
   (typeof window === "undefined" && process.env.API_INTERNAL_URL) ||
   process.env.NEXT_PUBLIC_API_URL ||
@@ -25,10 +20,6 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-/**
- * fetch() có tự động gắn header Authorization: Bearer <token> nếu đã đăng nhập.
- * Dùng cho mọi lời gọi tới /api/secure/** (tạo/sửa/xoá property, review, ...).
- */
 export async function authFetch(path: string, options: RequestInit = {}) {
   const token = getToken();
   const headers = new Headers(options.headers);
@@ -46,15 +37,31 @@ export async function authFetch(path: string, options: RequestInit = {}) {
     cache: "no-store",
   });
 }
-
-/**
- * Ném lỗi có message rõ ràng từ response của backend (backend trả string hoặc
- * JSON tuỳ endpoint — ApiPropertyController/ApiReviewController trả text thô
- * kiểu `e.getMessage()`, không phải JSON, nên phải thử đọc text trước).
- */
 export async function throwIfNotOk(res: Response) {
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `Lỗi ${res.status}`);
+  if (res.ok) return;
+
+  const text = await res.text().catch(() => "");
+  const looksLikeHtml = text.trim().startsWith("<");
+  const looksLikeStackTrace =
+    text.includes("Exception") || text.includes("\tat ");
+  let jsonMessage: string | null = null;
+  try {
+    const json = JSON.parse(text);
+    if (typeof json.message === "string") jsonMessage = json.message;
+  } catch {}
+
+  if (
+    jsonMessage &&
+    jsonMessage.length < 200 &&
+    !jsonMessage.includes("Exception")
+  ) {
+    throw new Error(jsonMessage);
   }
+
+  if (!text || looksLikeHtml || looksLikeStackTrace || jsonMessage) {
+    throw new Error(
+      `Đã có lỗi xảy ra (mã lỗi ${res.status}). Vui lòng thử lại.`,
+    );
+  }
+  throw new Error(text);
 }

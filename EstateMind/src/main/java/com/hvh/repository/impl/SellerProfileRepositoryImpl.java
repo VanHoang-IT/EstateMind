@@ -35,8 +35,8 @@ public class SellerProfileRepositoryImpl implements SellerProfileRepository {
     public SellerProfile getByUserId(int userId) {
         Session session = this.factory.getObject().getCurrentSession();
 
-        Query<SellerProfile> query =
-                session.createQuery(
+        Query<SellerProfile> query
+                = session.createQuery(
                         "FROM SellerProfile s WHERE s.users.id = :userId", SellerProfile.class);
         query.setParameter("userId", userId);
 
@@ -48,17 +48,30 @@ public class SellerProfileRepositoryImpl implements SellerProfileRepository {
         Session session = this.factory.getObject().getCurrentSession();
         return session.merge(profile);
     }
-    
+
     @Override
     public List<SellerProfile> getPendingVerification() {
         Session session = this.factory.getObject().getCurrentSession();
- 
-        Query<SellerProfile> query =
-                session.createQuery(
+
+        Query<SellerProfile> query
+                = session.createQuery(
                         "FROM SellerProfile s WHERE s.isVerified IS NULL OR s.isVerified = false"
-                                + " ORDER BY s.updatedAt DESC",
+                        + " ORDER BY s.updatedAt DESC",
                         SellerProfile.class);
- 
+
+        return query.getResultList();
+    }
+
+    @Override
+    public List<SellerProfile> getApprovedVerification() {
+        Session session = this.factory.getObject().getCurrentSession();
+
+        Query<SellerProfile> query
+                = session.createQuery(
+                        "FROM SellerProfile s WHERE s.isVerified = true"
+                        + " ORDER BY s.updatedAt DESC",
+                        SellerProfile.class);
+
         return query.getResultList();
     }
 }

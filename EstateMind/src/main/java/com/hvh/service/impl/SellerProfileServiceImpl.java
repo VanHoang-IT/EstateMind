@@ -67,10 +67,16 @@ public class SellerProfileServiceImpl implements SellerProfileService {
     public SellerProfile updateProfile(SellerProfile profile) {
         return this.sellerProfileRepo.updateProfile(profile);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<SellerProfile> getPendingVerification() {
         return this.sellerProfileRepo.getPendingVerification();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SellerProfile> getApprovedVerification() {
+        return this.sellerProfileRepo.getApprovedVerification();
     }
 }

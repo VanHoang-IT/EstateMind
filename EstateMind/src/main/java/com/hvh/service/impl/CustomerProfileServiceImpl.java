@@ -63,10 +63,16 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     public CustomerProfile updateProfile(CustomerProfile profile) {
         return this.customerProfileRepo.updateProfile(profile);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<CustomerProfile> getPendingVerification() {
         return this.customerProfileRepo.getPendingVerification();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CustomerProfile> getApprovedVerification() {
+        return this.customerProfileRepo.getApprovedVerification();
     }
 }

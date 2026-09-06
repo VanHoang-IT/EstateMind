@@ -13,10 +13,9 @@ import java.util.List;
  */
 public interface CustomerProfileService {
     CustomerProfile createProfileForUser(Users user);
-
     CustomerProfile getByUserId(int userId);
-
     CustomerProfile updateProfile(CustomerProfile profile);
-    
+
     List<CustomerProfile> getPendingVerification();
+    List<CustomerProfile> getApprovedVerification();
 }

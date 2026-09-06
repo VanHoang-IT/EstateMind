@@ -28,13 +28,13 @@ const initialForm: RegisterForm = {
 
 function getReadableError(error: unknown): string {
   if (!(error instanceof Error)) {
-    return "Registration failed. Please try again.";
+    return "Đăng ký thất bại. Vui lòng thử lại.";
   }
 
   const rawMessage = error.message?.trim();
 
   if (!rawMessage) {
-    return "Registration failed. Please try again.";
+    return "Đăng ký thất bại. Vui lòng thử lại.";
   }
 
   let message = rawMessage;
@@ -66,7 +66,7 @@ function getReadableError(error: unknown): string {
       normalized.includes("exists") ||
       normalized.includes("taken")
     ) {
-      return "This username is already in use.";
+      return "Tên đăng nhập này đã được sử dụng.";
     }
   }
 
@@ -78,7 +78,7 @@ function getReadableError(error: unknown): string {
       normalized.includes("exists") ||
       normalized.includes("used")
     ) {
-      return "This email address is already in use.";
+      return "Địa chỉ email này đã được sử dụng.";
     }
   }
 
@@ -90,7 +90,7 @@ function getReadableError(error: unknown): string {
       normalized.includes("exists") ||
       normalized.includes("used")
     ) {
-      return "This phone number is already in use.";
+      return "Số điện thoại này đã được sử dụng.";
     }
   }
 
@@ -99,10 +99,10 @@ function getReadableError(error: unknown): string {
     normalized.includes("customer hoặc seller") ||
     normalized.includes("customer or seller")
   ) {
-    return "Please choose either Customer or Seller as your account type.";
+    return "Vui lòng chọn Khách hàng hoặc Người bán làm loại tài khoản.";
   }
 
-  return message || "Registration failed. Please try again.";
+  return message || "Đăng ký thất bại. Vui lòng thử lại.";
 }
 
 export default function RegisterPage() {
@@ -139,43 +139,43 @@ export default function RegisterPage() {
     const nextErrors: FieldErrors = {};
 
     if (!form.lastName.trim()) {
-      nextErrors.lastName = "Please enter your last name.";
+      nextErrors.lastName = "Vui lòng nhập họ của bạn.";
     }
 
     if (!form.firstName.trim()) {
-      nextErrors.firstName = "Please enter your first name.";
+      nextErrors.firstName = "Vui lòng nhập tên của bạn.";
     }
 
     if (!form.username.trim()) {
-      nextErrors.username = "Please enter a username.";
+      nextErrors.username = "Vui lòng nhập tên đăng nhập.";
     }
 
     if (!form.password.trim()) {
-      nextErrors.password = "Please enter a password.";
+      nextErrors.password = "Vui lòng nhập mật khẩu.";
     } else if (form.password.length < 6) {
-      nextErrors.password = "Password must be at least 6 characters.";
+      nextErrors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
     }
 
     const phone = form.phone.replace(/[\s.-]/g, "");
 
     if (!phone) {
-      nextErrors.phone = "Please enter your phone number.";
+      nextErrors.phone = "Vui lòng nhập số điện thoại.";
     } else if (!/^[0-9]{9,11}$/.test(phone)) {
-      nextErrors.phone = "Phone number must contain 9–11 digits.";
+      nextErrors.phone = "Số điện thoại phải gồm 9–11 chữ số.";
     }
 
     if (!form.email.trim()) {
-      nextErrors.email = "Please enter your email address.";
+      nextErrors.email = "Vui lòng nhập địa chỉ email.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      nextErrors.email = "Please enter a valid email address.";
+      nextErrors.email = "Vui lòng nhập địa chỉ email hợp lệ.";
     }
 
     if (!avatar) {
-      nextErrors.avatar = "Please select a profile picture.";
+      nextErrors.avatar = "Vui lòng chọn ảnh đại diện.";
     } else if (!avatar.type.startsWith("image/")) {
-      nextErrors.avatar = "The selected file must be an image.";
+      nextErrors.avatar = "Tệp được chọn phải là hình ảnh.";
     } else if (avatar.size > 5 * 1024 * 1024) {
-      nextErrors.avatar = "Profile picture must not exceed 5 MB.";
+      nextErrors.avatar = "Ảnh đại diện không được vượt quá 5 MB.";
     }
 
     setErrors(nextErrors);
@@ -272,7 +272,7 @@ export default function RegisterPage() {
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-md border border-gray-200 bg-white p-6 shadow-sm">
         <h1 className="mb-6 text-center text-xl font-bold text-gray-900">
-          Create Account
+          Tạo tài khoản
         </h1>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -283,7 +283,7 @@ export default function RegisterPage() {
                 htmlFor="lastName"
                 className="mb-1 block text-sm text-gray-600"
               >
-                Last Name
+                Họ
               </label>
 
               <input
@@ -306,7 +306,7 @@ export default function RegisterPage() {
                 htmlFor="firstName"
                 className="mb-1 block text-sm text-gray-600"
               >
-                First Name
+                Tên
               </label>
 
               <input
@@ -328,7 +328,7 @@ export default function RegisterPage() {
           {/* ROLE */}
           <div>
             <label className="mb-1 block text-sm text-gray-600">
-              Account Type
+              Loại tài khoản
             </label>
 
             <div className="grid grid-cols-2 gap-3">
@@ -341,7 +341,7 @@ export default function RegisterPage() {
                     : "border-gray-300 text-gray-600 hover:border-gray-400"
                 }`}
               >
-                Buyer / Renter
+                Người mua / Người thuê
               </button>
 
               <button
@@ -353,7 +353,7 @@ export default function RegisterPage() {
                     : "border-gray-300 text-gray-600 hover:border-gray-400"
                 }`}
               >
-                Seller / Agent
+                Người bán / Môi giới
               </button>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function RegisterPage() {
               htmlFor="username"
               className="mb-1 block text-sm text-gray-600"
             >
-              Username
+              Tên đăng nhập
             </label>
 
             <input
@@ -388,7 +388,7 @@ export default function RegisterPage() {
               htmlFor="password"
               className="mb-1 block text-sm text-gray-600"
             >
-              Password
+              Mật khẩu
             </label>
 
             <input
@@ -410,7 +410,7 @@ export default function RegisterPage() {
           {/* PHONE */}
           <div>
             <label htmlFor="phone" className="mb-1 block text-sm text-gray-600">
-              Phone Number
+              Số điện thoại
             </label>
 
             <input
@@ -458,7 +458,7 @@ export default function RegisterPage() {
               htmlFor="avatar"
               className="mb-1 block text-sm text-gray-600"
             >
-              Profile Picture *
+              Ảnh đại diện *
             </label>
 
             <input
@@ -483,7 +483,7 @@ export default function RegisterPage() {
             />
 
             <p className="mt-1 text-xs text-gray-400">
-              JPG, PNG or WEBP. Maximum size: 5 MB.
+              JPG, PNG hoặc WEBP. Kích thước tối đa: 5 MB.
             </p>
 
             {errors.avatar && (
@@ -507,17 +507,17 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full rounded-md bg-red-500 py-2.5 font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Creating account..." : "Create Account"}
+            {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          Already have an account?{" "}
+          Đã có tài khoản?{" "}
           <Link
             href="/login"
             className="font-medium text-red-500 hover:underline"
           >
-            Sign In
+            Đăng nhập
           </Link>
         </p>
       </div>

@@ -35,8 +35,8 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     public CustomerProfile getByUserId(int userId) {
         Session session = this.factory.getObject().getCurrentSession();
 
-        Query<CustomerProfile> query =
-                session.createQuery(
+        Query<CustomerProfile> query
+                = session.createQuery(
                         "FROM CustomerProfile c WHERE c.users.id = :userId", CustomerProfile.class);
         query.setParameter("userId", userId);
 
@@ -48,17 +48,30 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
         Session session = this.factory.getObject().getCurrentSession();
         return session.merge(profile);
     }
-    
+
     @Override
     public List<CustomerProfile> getPendingVerification() {
         Session session = this.factory.getObject().getCurrentSession();
- 
-        Query<CustomerProfile> query =
-                session.createQuery(
+
+        Query<CustomerProfile> query
+                = session.createQuery(
                         "FROM CustomerProfile c WHERE c.identityVerified IS NULL OR"
-                                + " c.identityVerified = false ORDER BY c.updatedAt DESC",
+                        + " c.identityVerified = false ORDER BY c.updatedAt DESC",
                         CustomerProfile.class);
- 
+
+        return query.getResultList();
+    }
+
+    @Override
+    public List<CustomerProfile> getApprovedVerification() {
+        Session session = this.factory.getObject().getCurrentSession();
+
+        Query<CustomerProfile> query
+                = session.createQuery(
+                        "FROM CustomerProfile c WHERE c.identityVerified = true"
+                        + " ORDER BY c.updatedAt DESC",
+                        CustomerProfile.class);
+
         return query.getResultList();
     }
 }

@@ -11,12 +11,12 @@ import java.util.List;
 /**
  * @author acer
  */
+
 public interface SellerProfileService {
     SellerProfile createProfileForUser(Users user);
-
     SellerProfile getByUserId(int userId);
-
     SellerProfile updateProfile(SellerProfile profile);
 
     List<SellerProfile> getPendingVerification();
+    List<SellerProfile> getApprovedVerification();
 }
